@@ -1,0 +1,29 @@
+Most of the stuff you'll need to run these analyses is in the 'Scripts' folder, including a folder with the converted, downsampled, and filtered data ('SPM_Files'). 
+
+You can find the preprocessing and HMM results in the other folders, which are clearly marked in RED_MEG.
+
+The order in which you do preprocessing is important. I did things in this order, with these scripts/programs:
+
+1. Maxfiltering and ICA artefact removal (see Python script 'HMM_MaxfilterAndICA.py').
+2. Conversion into .mat and .dat files (SPM 12)
+3. Bandpass filtering (SPM 12)
+4. Coregistration (SPM 12)
+5. Beamforming (see Matlab script 'HMM_Beamforming.m').
+6. Parcellation (see Matlab script 'HMM_ApplyParcellation_38.m').
+7. Other preprocessing - including detrending, channel standardisation, leakage correction, application of a Hilbert envelope, and downsampling (see Matlab script 'HMM_FinishPreprocessing.m').
+
+You can look for bad segments in your timeseries data (and exclude participants as necessary) using 'HMM_BadSegments.m'.
+
+HMM computation is done within the matlab script 'HMM_Compute.m'. 
+
+Calculate other useful features, plus preliminary generation of plots, using 'HMM_Info.m'). 
+
+Compare intervals, lifetimes, and fractional occupancies between states using 'HMM_BetweenStatesAnalyses.m'.
+
+Assess relationships between behaviour, cognition, and state measures using 'HMM_CognitiveBehaviouralAnalyses.m'.
+
+Compute entropy rates, modularity, and communicability across state transition matrices using 'HMM_Entropy.m'
+
+Visualise HMM states in HCP Workbench using 'HMM_visualise.m'
+
+
