@@ -25,10 +25,6 @@ Compare intervals, lifetimes, and fractional occupancies between states using 'H
 
 Assess relationships between behaviour, cognition, and state measures using 'HMM_CognitiveBehaviouralAnalyses.m'.
 
-Compute entropy rates, modularity, and communicability across state transition matrices using 'HMM_Entropy.m'. While we did not include any modularity or communicability calculations in the
-current paper, we did see a few interesting effects, and you might also be interested in looking into these relationships in your analyses. In a past paper of ours 
-(Zdorovtsova et al., 2023: 10.1016/j.cortex.2023.04.001), we found that nodal communicability is related to cognitive ability in a sample of children with developmental difficulties.
+Compute entropy rates, modularity, and communicability across state transition matrices using 'HMM_Entropy.m'. While we did not include any modularity or communicability calculations in the current paper, we did see a few interesting effects, and you might also be interested in looking into these relationships in your analyses. In a past paper of ours (Zdorovtsova et al., 2023: https://doi.org/10.1016/j.cortex.2023.04.001), we found that nodal communicability is related to cognitive ability in a sample of children with developmental difficulties.
 
 Finally, you can visualise HMM states in HCP Workbench using 'HMM_visualise.m'
-
-
