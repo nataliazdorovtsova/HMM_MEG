@@ -1,13 +1,16 @@
-Most of the stuff you'll need to run these analyses is in the 'Scripts' folder, including a folder with the converted, downsampled, and filtered data ('SPM_Files'). 
+This is the script repository for 'The entropy of resting-state neural dynamics is a marker of general cognitive ability in childhood' (Zdorovtsova et al., 2023). 
 
-You can find the preprocessing and HMM results in the other folders, which are clearly marked in RED_MEG.
+HMM_MEG has several dependencies, and while most of the scripts rely on MATLAB, we chose do do Maxfiltering in Python. You will need:
+-SPM 12
+-The OSL repository (https://github.com/OHBA-analysis/osl/) and more specifically, the HMM-MAR toolbox (https://github.com/OHBA-analysis/HMM-MAR)
+-HCP Workbench (for visualisation; see https://humanconnectome.org/software/connectome-workbench)
 
-The order in which you do preprocessing is important. I did things in this order, with these scripts/programs:
+The order in which you do MEG data preprocessing is important. We did things in this order, with these scripts and programs:
 
 1. Maxfiltering and ICA artefact removal (see Python script 'HMM_MaxfilterAndICA.py').
 2. Conversion into .mat and .dat files (SPM 12)
-3. Bandpass filtering (SPM 12)
-4. Coregistration (SPM 12)
+3. Bandpass filtering between 1Hz and 30Hz (SPM 12)
+4. Coregistration to T1 scans (SPM 12)
 5. Beamforming (see Matlab script 'HMM_Beamforming.m').
 6. Parcellation (see Matlab script 'HMM_ApplyParcellation_38.m').
 7. Other preprocessing - including detrending, channel standardisation, leakage correction, application of a Hilbert envelope, and downsampling (see Matlab script 'HMM_FinishPreprocessing.m').
@@ -16,14 +19,16 @@ You can look for bad segments in your timeseries data (and exclude participants 
 
 HMM computation is done within the matlab script 'HMM_Compute.m'. 
 
-Calculate other useful features, plus preliminary generation of plots, using 'HMM_Info.m'). 
+Calculate other useful features, plus generate some preliminary plots, using 'HMM_Info.m'). 
 
 Compare intervals, lifetimes, and fractional occupancies between states using 'HMM_BetweenStatesAnalyses.m'.
 
 Assess relationships between behaviour, cognition, and state measures using 'HMM_CognitiveBehaviouralAnalyses.m'.
 
-Compute entropy rates, modularity, and communicability across state transition matrices using 'HMM_Entropy.m'
+Compute entropy rates, modularity, and communicability across state transition matrices using 'HMM_Entropy.m'. While we did not include any modularity or communicability calculations in the
+current paper, we did see a few interesting effects, and you might also be interested in looking into these relationships in your analyses. In a past paper of ours 
+(Zdorovtsova et al., 2023: 10.1016/j.cortex.2023.04.001), we found that nodal communicability is related to cognitive ability in a sample of children with developmental difficulties.
 
-Visualise HMM states in HCP Workbench using 'HMM_visualise.m'
+Finally, you can visualise HMM states in HCP Workbench using 'HMM_visualise.m'
 
 
