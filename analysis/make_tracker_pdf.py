@@ -46,6 +46,18 @@ FIGURE_CAPTIONS = {
         "of interest. Note the direction: state 3 is negative (higher cognitive ability, less "
         "occupancy) while states 4, 6 and 7 are positive."
     ),
+    "transitions_into_state_network.png": (
+        "Transitions into each state against cognitive ability. Node colour is the correlation "
+        "between transitions into that state and cognitive ability; ringed and starred states "
+        "(3, 4, 6) are significant after correction across all 31 tests (p = 0.041). Node size "
+        "is mean fractional occupancy. Edges show the mean transition structure only and carry "
+        "no statistical claim."
+    ),
+    "transition_cognition_heatmap.png": (
+        "Cell-wise correlations between each transition probability and cognitive ability, on "
+        "the same colour scale as the network figure. Descriptive only: individual cells were "
+        "not tested, since testing all 49 is the multiplicity problem this reanalysis removed."
+    ),
     "transition_matrix_heatmap.png": (
         "Mean state transition matrix across subjects, self-transitions masked. Self-transition "
         "probability is roughly 0.99 for every state at this sampling rate, so leaving the "
@@ -65,6 +77,8 @@ FIGURE_CAPTIONS = {
 FIGURE_ORDER = [
     "state_metric_distributions.png",
     "cognition_fo_scatters.png",
+    "transitions_into_state_network.png",
+    "transition_cognition_heatmap.png",
     "transition_matrix_heatmap.png",
     "cognitive_behavioural_correlations.png",
     "residual_qq_comparison.png",

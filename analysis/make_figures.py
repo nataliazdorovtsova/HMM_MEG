@@ -29,6 +29,9 @@ from analysis.io import (
     load_transition_matrices,
     merged_state_level,
 )
+import numpy as np
+from scipy.stats import pearsonr
+
 from analysis.models import fit_state_metric_model, fit_subject_scalar_model, transition_column_sums
 from analysis.transforms import rank_based_inverse_normal_transform
 from analysis.viz.diagnostics import residual_qq_plot
@@ -36,7 +39,9 @@ from analysis.viz.figures import (
     cognition_scatter,
     corr_heatmap,
     state_metric_distribution,
+    transition_correlation_heatmap,
     transition_heatmap,
+    transition_network,
 )
 
 FS = 250  # HMM_FinishPreprocessing.m: options.downsample = 250
@@ -49,6 +54,15 @@ BEHAVIOURAL_COLUMNS = [
 # States whose own occupancy slope survives the final multiplicity correction
 # (see supplement section 7). States 1 and 3 are negative, 4 and 6 positive.
 HIGHLIGHT_STATES = [1, 3, 4, 6]
+
+# States whose transitions-into-state slope survives correction (p_adj = 0.041).
+SIGNIFICANT_TRANSITION_STATES = {3, 4, 6}
+
+STATE_LABELS = {
+    1: "State 1\n(DMN+)", 2: "State 2\n(VT+)", 3: "State 3\n(DMN−)",
+    4: "State 4\n(SM+, FT−)", 5: "State 5\n(V+, FT−)",
+    6: "State 6\n(FP+, V−)", 7: "State 7\n(LP+, DMN−)",
+}
 
 
 def _load(export_dir: Path):
@@ -118,6 +132,73 @@ def figure_transition_heatmap(transitions, output_dir: Path) -> Path:
     return path
 
 
+def _transition_cognition_data(subject_level, merged, transitions):
+    """Shared inputs for the two transition figures.
+
+    Both figures are produced from one call so they use the **same** colour
+    limit; a diverging scale is only comparable between panels if the two use
+    identical limits, and these are intended to be assembled side by side.
+    """
+    mean_matrix = (
+        transitions.groupby(["from_state", "to_state"])["probability"]
+        .mean().unstack().sort_index().sort_index(axis=1).to_numpy()
+    )
+    n_states = mean_matrix.shape[0]
+
+    column_sums = transition_column_sums(transitions).merge(subject_level, on="subject_id")
+    node_values = {
+        k: pearsonr(column_sums.loc[column_sums.state == k, "transition_into_sum"],
+                    column_sums.loc[column_sums.state == k, "WASI_T"])[0]
+        for k in range(1, n_states + 1)
+    }
+    node_sizes = merged.groupby("state")["FO"].mean().to_dict()
+
+    wide = transitions.pivot_table(index="subject_id", columns=["from_state", "to_state"],
+                                   values="probability")
+    cognition = subject_level.set_index("subject_id").loc[wide.index, "WASI_T"]
+    cellwise = np.array([[pearsonr(wide[(i, j)], cognition)[0]
+                          for j in range(1, n_states + 1)]
+                         for i in range(1, n_states + 1)])
+
+    limit = max(np.abs(cellwise).max(), max(abs(v) for v in node_values.values()))
+    return mean_matrix, node_values, node_sizes, cellwise, limit
+
+
+def figures_transition_cognition(subject_level, merged, transitions, output_dir: Path) -> list[Path]:
+    """The two transition figures, as separate files sharing one colour scale.
+
+    Written separately so they can be composed into a manuscript figure
+    however you like. Both use the same diverging magenta-green scale and the
+    same symmetric limit, so the colours mean the same thing in each.
+
+    The network figure deliberately differs from the original Figure 8A, which
+    drew one coloured edge per transition cell thresholded at p < 0.025
+    uncorrected - effects that paper itself reported as not surviving
+    correction. Here inference lives on the nodes; edges carry structure only.
+    """
+    mean_matrix, node_values, node_sizes, cellwise, limit = _transition_cognition_data(
+        subject_level, merged, transitions
+    )
+
+    fig, ax = plt.subplots(figsize=(8.4, 7.6))
+    transition_network(mean_matrix, node_values, node_sizes,
+                       significant_states=SIGNIFICANT_TRANSITION_STATES,
+                       state_labels=STATE_LABELS, vlim=limit, ax=ax)
+    fig.tight_layout()
+    network_path = output_dir / "transitions_into_state_network.png"
+    fig.savefig(network_path, dpi=200)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7.6, 7.2))
+    transition_correlation_heatmap(cellwise, vlim=limit, ax=ax)
+    fig.tight_layout()
+    heatmap_path = output_dir / "transition_cognition_heatmap.png"
+    fig.savefig(heatmap_path, dpi=200)
+    plt.close(fig)
+
+    return [network_path, heatmap_path]
+
+
 def figure_residual_qq(subject_level, merged, output_dir: Path) -> Path:
     """Raw vs rank-INT residual QQ plots for FO and entropy rate.
 
@@ -169,13 +250,15 @@ def main() -> None:
 
     subject_level, merged, transitions = _load(export_dir)
 
-    for path in [
+    paths = [
         figure_correlations(subject_level, output_dir),
         figure_state_distributions(merged, output_dir),
         figure_cognition_scatters(merged, output_dir),
         figure_transition_heatmap(transitions, output_dir),
+        *figures_transition_cognition(subject_level, merged, transitions, output_dir),
         figure_residual_qq(subject_level, merged, output_dir),
-    ]:
+    ]
+    for path in paths:
         print(f"wrote {path}")
 
 

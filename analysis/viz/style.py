@@ -39,6 +39,12 @@ SEQUENTIAL_CMAP = "Blues"
 # Diverging: blue <-> red with a neutral gray midpoint, for polarity (e.g. correlation matrices).
 DIVERGING_CMAP = "RdBu_r"
 
+# Diverging alternative used for the transition figures, carried over from the
+# original manuscript (MATLAB `brewermap([],'PiYG')`). Magenta <-> green with a
+# white midpoint; ColorBrewer classifies PiYG as colourblind-safe, so this is a
+# legitimate diverging pair rather than a purely aesthetic choice.
+DIVERGING_CMAP_PIYG = "PiYG"
+
 TEXT_PRIMARY = "#0b0b0b"
 TEXT_SECONDARY = "#52514e"
 TEXT_MUTED = "#898781"

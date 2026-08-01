@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import textwrap
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -17,9 +18,12 @@ import seaborn as sns
 
 from analysis.viz.style import (
     DIVERGING_CMAP,
+    DIVERGING_CMAP_PIYG,
     SEQUENTIAL_CMAP,
     STATE_PALETTE,
+    TEXT_MUTED,
     TEXT_PRIMARY,
+    TEXT_SECONDARY,
     apply_style,
     state_palette,
 )
@@ -151,4 +155,152 @@ def transition_heatmap(
     ax.set_xlabel("To state")
     ax.set_ylabel("From state")
     ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+    return ax
+
+
+def transition_network(
+    mean_transition_matrix: np.ndarray,
+    node_values: dict[int, float],
+    node_sizes: dict[int, float],
+    significant_states: set[int] | None = None,
+    state_labels: dict[int, str] | None = None,
+    vlim: float | None = None,
+    layout: str = "circular",
+    seed: int = 7,
+    ax=None,
+):
+    """Network ("cruciform") view of the state transition structure, with each
+    state coloured by how its *transitions-into* measure relates to cognition.
+
+    Deliberately different from the original manuscript's Figure 8A, which
+    drew one coloured edge per transition cell thresholded at p < 0.025
+    uncorrected - effects the paper itself reported as not surviving
+    correction. Drawing them as findings overstates them. Here:
+
+    - **edges** carry no inference. They show the mean transition structure
+      (width and grey level track mean probability, self-transitions
+      excluded), so the layout still conveys which states are hubs.
+    - **nodes** carry the inference. Fill is the diverging colour scale
+      applied to `node_values` (the correlation between transitions into
+      that state and cognitive ability); states in `significant_states`
+      get a heavy ring, so significance is marked once, explicitly, rather
+      than implied by which elements were drawn at all.
+
+    `node_sizes` is normally each state's mean fractional occupancy.
+    """
+    import networkx as nx
+
+    apply_style()
+    ax = ax or plt.gca()
+
+    n_states = mean_transition_matrix.shape[0]
+    states = list(range(1, n_states + 1))
+    significant_states = significant_states or set()
+    labels = state_labels or {k: f"State {k}" for k in states}
+
+    off_diagonal = mean_transition_matrix.astype(float).copy()
+    np.fill_diagonal(off_diagonal, 0.0)
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(states)
+    for i in states:
+        for j in states:
+            if i != j and off_diagonal[i - 1, j - 1] > 0:
+                graph.add_edge(i, j, weight=float(off_diagonal[i - 1, j - 1]))
+
+    if layout == "circular":
+        # Deterministic and collision-free: every node gets equal room and
+        # labels sit radially outside, so nothing overlaps regardless of the
+        # data. A force layout on a near-complete graph (every state reaches
+        # every other) produces an arbitrary, lopsided arrangement that
+        # invites reading structure into what is really just the optimiser's
+        # starting point.
+        angles = {s: np.pi / 2 - 2 * np.pi * i / n_states for i, s in enumerate(states)}
+        pos = {s: np.array([np.cos(a), np.sin(a)]) for s, a in angles.items()}
+    else:
+        pos = nx.spring_layout(graph, weight="weight", seed=seed, k=1.1, iterations=400)
+        angles = {s: np.arctan2(*pos[s][::-1]) for s in states}
+
+    weights = np.array([graph[u][v]["weight"] for u, v in graph.edges()])
+    wmax = weights.max() if len(weights) else 1.0
+    nx.draw_networkx_edges(
+        graph, pos, ax=ax,
+        width=[0.4 + 3.6 * (w / wmax) for w in weights],
+        edge_color=[(0.55, 0.55, 0.55, 0.20 + 0.55 * (w / wmax)) for w in weights],
+        arrowsize=9, connectionstyle="arc3,rad=0.10", node_size=2400,
+    )
+
+    limit = vlim or max(abs(v) for v in node_values.values())
+    cmap = plt.get_cmap(DIVERGING_CMAP_PIYG)
+    norm = mpl.colors.Normalize(vmin=-limit, vmax=limit)
+
+    size_max = max(node_sizes.values())
+    for state in states:
+        size = 900 + 3400 * (node_sizes[state] / size_max)
+        is_sig = state in significant_states
+        ax.scatter(
+            *pos[state], s=size, zorder=3,
+            color=cmap(norm(node_values[state])),
+            edgecolors=TEXT_PRIMARY if is_sig else TEXT_MUTED,
+            linewidths=2.6 if is_sig else 0.8,
+        )
+
+    for state in states:
+        x, y = pos[state]
+        # push the label radially outward from the centre so it never sits on
+        # its own node or a neighbour's
+        dx, dy = np.cos(angles[state]), np.sin(angles[state])
+        ax.annotate(
+            labels[state] + (" *" if state in significant_states else ""),
+            (x, y), xytext=(34 * dx, 34 * dy), textcoords="offset points",
+            ha="center" if abs(dx) < 0.4 else ("left" if dx > 0 else "right"),
+            va="center" if abs(dy) < 0.4 else ("bottom" if dy > 0 else "top"),
+            fontsize=10,
+            fontweight="bold" if state in significant_states else "normal",
+            color=TEXT_PRIMARY if state in significant_states else TEXT_SECONDARY,
+        )
+
+    ax.set_axis_off()
+    ax.set_aspect("equal")
+    ax.margins(0.34)
+    colorbar = ax.figure.colorbar(
+        mpl.cm.ScalarMappable(norm=norm, cmap=cmap), ax=ax,
+        orientation="horizontal", fraction=0.045, pad=0.04,
+    )
+    colorbar.set_label("Correlation with cognitive ability (transitions into state)")
+    return ax
+
+
+def transition_correlation_heatmap(
+    correlation_matrix: np.ndarray,
+    state_labels: list[str] | None = None,
+    vlim: float | None = None,
+    ax=None,
+):
+    """Cell-wise correlations between each transition probability and cognitive
+    ability, on the diverging magenta-green scale.
+
+    **Descriptive only.** These 49 cells are not the confirmatory analysis:
+    testing them individually is the multiplicity problem the reanalysis
+    removed, so no cell is marked significant here. The confirmatory test was
+    over transitions *into* each state (column sums) - see `transition_network`.
+    """
+    apply_style()
+    ax = ax or plt.gca()
+
+    n_states = correlation_matrix.shape[0]
+    labels = state_labels or [str(i + 1) for i in range(n_states)]
+    limit = vlim or float(np.abs(correlation_matrix).max())
+
+    sns.heatmap(
+        correlation_matrix, ax=ax, cmap=DIVERGING_CMAP_PIYG,
+        vmin=-limit, vmax=limit, center=0, square=True,
+        linewidths=0.5, linecolor="white",
+        xticklabels=labels, yticklabels=labels,
+        cbar_kws={"label": "Correlation with cognitive ability", "orientation": "horizontal",
+                  "fraction": 0.05, "pad": 0.10},
+    )
+    ax.set_xlabel("To state")
+    ax.set_ylabel("From state")
+    ax.tick_params(rotation=0)
     return ax

@@ -7,7 +7,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from analysis.viz.figures import corr_heatmap, cognition_scatter, state_metric_distribution, transition_heatmap
+from analysis.viz.figures import (
+    cognition_scatter,
+    corr_heatmap,
+    state_metric_distribution,
+    transition_correlation_heatmap,
+    transition_heatmap,
+    transition_network,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -91,3 +98,49 @@ def test_transition_heatmap_can_show_diagonal():
     ax = transition_heatmap(matrix, mask_diagonal=False)
     colorbar_ax = ax.figure.axes[-1]
     assert "masked" not in colorbar_ax.get_ylabel()
+
+
+def _transition_fixture(n_states=7, seed=0):
+    rng = np.random.default_rng(seed)
+    matrix = rng.dirichlet(np.ones(n_states), size=n_states)
+    np.fill_diagonal(matrix, 0.95)
+    node_values = {k: rng.uniform(-0.4, 0.4) for k in range(1, n_states + 1)}
+    node_sizes = {k: rng.uniform(0.02, 0.25) for k in range(1, n_states + 1)}
+    return matrix, node_values, node_sizes
+
+
+def test_transition_network_runs_and_marks_significant_states():
+    matrix, node_values, node_sizes = _transition_fixture()
+
+    ax = transition_network(matrix, node_values, node_sizes, significant_states={3, 4, 6})
+
+    # significant states get a heavier ring than the rest; check both widths present
+    linewidths = {round(float(np.ravel(c.get_linewidths())[0]), 2)
+                  for c in ax.collections if len(np.ravel(c.get_linewidths()))}
+    assert len(linewidths) >= 2, "significant and non-significant nodes should differ visibly"
+    starred = [t.get_text() for t in ax.texts if t.get_text().endswith("*")]
+    assert len(starred) == 3
+
+
+def test_transition_network_circular_layout_has_no_overlapping_nodes():
+    matrix, node_values, node_sizes = _transition_fixture()
+
+    ax = transition_network(matrix, node_values, node_sizes, layout="circular")
+
+    points = np.vstack([c.get_offsets() for c in ax.collections if len(c.get_offsets()) == 1])
+    distances = [
+        np.linalg.norm(points[i] - points[j])
+        for i in range(len(points)) for j in range(i + 1, len(points))
+    ]
+    assert min(distances) > 0.5, "circular layout should keep nodes well separated"
+
+
+def test_transition_correlation_heatmap_is_symmetric_about_zero():
+    rng = np.random.default_rng(0)
+    correlations = rng.uniform(-0.4, 0.5, size=(7, 7))
+
+    ax = transition_correlation_heatmap(correlations)
+
+    # a diverging scale must be centred on zero or the colours mislead
+    mesh = ax.collections[0]
+    assert mesh.norm.vmin == pytest.approx(-mesh.norm.vmax)
