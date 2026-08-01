@@ -11,6 +11,7 @@ dependencies = [
     "patsy>=0.5",
     "matplotlib>=3.7",
     "seaborn>=0.13",
+    "markdown>=3.4",
 ]
 
 [project.optional-dependencies]
