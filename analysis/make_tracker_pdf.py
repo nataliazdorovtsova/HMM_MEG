@@ -91,6 +91,11 @@ table th:nth-child(2), table td:nth-child(2) { width: 37%; }
 table th:nth-child(3), table td:nth-child(3) { width: 37%; }
 table.two-col th:nth-child(1), table.two-col td:nth-child(1) { width: 34%; }
 table.two-col th:nth-child(2), table.two-col td:nth-child(2) { width: 66%; }
+/* 4+ columns (the results tables): let the browser size them evenly rather
+   than inheriting the 26/37/37 split meant for the three-column tracker */
+table.multi-col { table-layout: auto; }
+table.multi-col th, table.multi-col td { width: auto; white-space: nowrap; }
+table.multi-col td:nth-child(2) { white-space: normal; }
 code { background: #f2f2f0; padding: 0 2px; font-size: 8pt; }
 hr { border: none; border-top: 1px solid #ccc; margin: 10pt 0; }
 .figure { page-break-inside: avoid; margin: 0 0 16pt 0; text-align: center; }
@@ -116,13 +121,19 @@ def _embed(path: Path) -> str:
 def build_html(tracker_md: str, figures_dir: Path) -> str:
     body = markdown.markdown(strip_emoji(tracker_md), extensions=["tables", "sane_lists"])
 
-    # the two-column tables in Parts B and C need different column widths
-    # than the three-column table in Part A
+    # Column widths are set per table by column count: the fixed 26/37/37
+    # split suits the three-column tracker but would push a six-column
+    # results table off the page.
     parts = body.split("<table>")
     rebuilt = parts[0]
-    for i, chunk in enumerate(parts[1:], start=1):
+    for chunk in parts[1:]:
         header_count = chunk.split("</thead>")[0].count("<th>")
-        cls = ' class="two-col"' if header_count == 2 else ""
+        if header_count == 2:
+            cls = ' class="two-col"'
+        elif header_count >= 4:
+            cls = ' class="multi-col"'
+        else:
+            cls = ""
         rebuilt += f"<table{cls}>" + chunk
     body = rebuilt
 

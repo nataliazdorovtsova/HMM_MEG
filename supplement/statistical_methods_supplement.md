@@ -273,46 +273,55 @@ All p-values below are from **10,000-permutation** tests on **per-state simple s
 state's own cognition slope, not its difference from a reference state. See §7.1 for why this
 distinction was corrected mid-analysis and what it changed.
 
-**Significant after correction** (7 of 31 terms). Each cell is that state's own cognition
+**Significant after correction** (5 of 31 terms). Each cell is that state's own cognition
 slope, BH-FDR adjusted across all 31:
 
 | State | Label | FO | Transition-into | Interval | Lifetime |
 |---|---|---|---|---|---|
-| 1 | DMN+ | **0.035** (−) | ns (0.169) | **0.046** (+) | ns (0.121) |
-| 2 | VT+ | ns (0.326) | ns (0.389) | ns (0.770) | ns (0.176) |
-| 3 | DMN− | **0.046** (−) | **0.035** (−) | ns (0.121) | ns (0.121) |
-| 4 | SM+/FT− | **0.035** (+) | **0.035** (+) | ns (0.770) | ns (0.770) |
-| 5 | V+/FT− | ns (0.259) | ns (0.770) | ns (0.953) | ns (0.094) |
-| 6 | FP+/V− | **0.035** (+) | **0.035** (+) | ns (0.617) | ns (0.524) |
-| 7 | LP+/DMN− | *marginal (0.057)* (+) | *marginal (0.076)* (+) | ns (0.802) | ns (0.330) |
+| 1 | DMN+ | **0.041** (−) | ns (0.179) | *0.052* (+) | ns (0.129) |
+| 2 | VT+ | ns (0.326) | ns (0.389) | ns (0.770) | ns (0.187) |
+| 3 | DMN− | *0.052* (−) | **0.041** (−) | ns (0.129) | ns (0.129) |
+| 4 | SM+/FT− | **0.041** (+) | **0.041** (+) | ns (0.770) | ns (0.770) |
+| 5 | V+/FT− | ns (0.273) | ns (0.770) | ns (0.953) | ns (0.102) |
+| 6 | FP+/V− | **0.041** (+) | **0.041** (+) | ns (0.617) | ns (0.524) |
+| 7 | LP+/DMN− | *0.063* (+) | *0.083* (+) | ns (0.802) | ns (0.330) |
 
-Signs in brackets give the direction of the relationship with cognitive ability.
+Bold = significant; italic = marginal (0.05–0.09). Signs give the direction of the relationship
+with cognitive ability.
 
 Subject-level effects:
 
 | Effect | p_raw | p_adjusted | |
 |---|---|---|---|
-| Entropy rate ~ **age** | 0.0013 | **0.035** | significant |
-| Entropy rate ~ **cognition** | 0.0203 | 0.057 | *marginal* |
+| Entropy rate ~ **cognition** | 0.0203 | 0.063 | *marginal* |
+| Entropy rate ~ age | 0.1675 | 0.273 | ns |
 | Entropy rate ~ age × cognition | 0.6995 | 0.770 | ns |
 
 ### Reading the pattern
 
-- **Occupancy and transition-into-state agree, and they are state-specific.** States **3, 4 and
-  6** are significant on both; state **1** on occupancy; state **7** marginal on both. States 2
-  and 5 show nothing. Directions are coherent rather than scattered: the two DMN states (1
-  activation, 3 suppression) are **negative** - higher cognitive ability means less time in, and
-  fewer transitions into, DMN-dominated states - while the task-positive states (4 somatomotor,
-  6 fronto-parietal, 7 left-parietal) are **positive**.
-- **Interval survives only for state 1** (p_adj = 0.046, positive): higher-ability children take
-  *longer to return* to the rarely-visited DMN-activation state. This is consistent with its
-  negative occupancy effect and is a coherent single finding, not a broad interval effect.
-- **Lifetime survives for no state.** Best adjusted p is 0.094 (state 5).
+- **States 4 (somatomotor) and 6 (fronto-parietal) are the robust findings**: significant on
+  *both* occupancy and transitions-into-state, both **positive**.
+- **State 3 (DMN suppression)** is significant on transitions (0.041) and marginal on occupancy
+  (0.052); **state 1 (DMN activation)** is the mirror - significant on occupancy (0.041),
+  marginal on interval (0.052). Both **negative**.
+- The direction pattern is coherent rather than scattered: **both DMN-dominated states are
+  negative** (higher cognitive ability → less time in, fewer transitions into them) and **both
+  task-positive states are positive**. State 7 (left-parietal / DMN−) trends positive but does
+  not clear correction on either metric (0.063, 0.083).
+- **States 2 and 5 show nothing on any metric.**
+- **Lifetime survives for no state** (best 0.102), and **interval for none** (state 1 nearest at
+  0.052).
 
 Taken together, individual differences are in **how often children enter these states, not how
-long they stay once there** - occupancy and entry frequency carry the effects, dwell time does
-not. This is a direct answer to the question of what drives the occupancy effects: transitions
-rather than durations.
+long they stay once there** - occupancy and entry frequency carry what signal there is; dwell
+time carries none.
+
+**Honest caveat on robustness.** Many adjusted p-values sit in a narrow band around 0.04–0.06,
+so which terms fall either side of 0.05 is sensitive to the exact composition of the correction
+family. The claim that survives that sensitivity is the *pattern* - two task-positive states
+positive, two DMN states negative, on occupancy and entry frequency but not dwell time - rather
+than the significance of any individual cell. The manuscript should be written to that level of
+confidence.
 
 ### 7.1 A correction to the parameterisation (and what it changed)
 
@@ -337,29 +346,28 @@ The earlier "interval is significant everywhere, so it must be re-expressing a g
 effect" reasoning was chasing an artefact of the reference coding: every state differed from
 state 1 because state 1 was the only state with an interval effect.
 
-### 7.2 Open question: is the correction family right?
+### 7.2 The correction-family question is now moot
 
-Entropy rate's relationship with cognition sits at **p_raw = 0.0203, p_adj = 0.057** against the
-31-test family. Corrected within its own 3-test family instead, it would be **p_adj = 0.031**
-and significant. This matters because it is the paper's title claim.
+An earlier version of this document flagged the family definition as an open decision that
+would determine whether the paper's title claim survived. With the age-permutation bug fixed
+(§7.3), it no longer does:
 
-Both family definitions are defensible, and the choice must be made on principle rather than on
-which gives the nicer answer:
+| Correction family | Entropy ~ cognition |
+|---|---|
+| All 31 tests together | p_adj = **0.063** |
+| Entropy as its own 3-test family | p_adj = **0.061** |
 
-- **One family of 31** (used above): maximally conservative, hardest to attack, and consistent
-  with the stated goal of correcting across everything the paper reports. Costs the entropy
-  claim its significance.
-- **Two families** - global dynamics (entropy: 3 tests) and state-specific metrics (28 tests):
-  arguably better matched to the questions asked, since the reviewers' objection was to
-  repeatedly testing the *same* question across states without correction, not to combining two
-  genuinely different questions. Recovers the entropy claim at p_adj = 0.031.
+Marginal either way, and comfortably outside 0.05 on both. The choice of family no longer
+changes any conclusion, so it can be stated a priori in Methods on principle alone (we recommend
+the single 31-test family, as the more conservative and simpler to describe) without that choice
+carrying the title.
 
-**Whichever is chosen must be stated a priori in Methods and applied uniformly.** Choosing after
-seeing both is exactly the practice the original submission was criticised for. Author decision
-required - this is not a decision the analysis can make.
-
-Note that entropy rate's relationship with **age** (p_adj = 0.035) survives either way, as do
-the state-specific occupancy and transition effects.
+**Implication for the manuscript.** The title claim - "the entropy of resting-state neural
+dynamics is a marker of general cognitive ability" - rests on p_raw = 0.020, p_adj ≈ 0.06.
+Uncorrected it is a real effect; corrected for everything else the paper reports, it is
+marginal. The state-specific occupancy and transition findings are the stronger results and are
+the better basis for the paper's headline. This is an authorial judgement, but the numbers
+support reframing rather than retaining the current title as-is.
 
 ### 7.1 Why the p-values changed from the 500-permutation run
 
@@ -371,6 +379,86 @@ meaningful change is in **transition-into-state**, where states 4 and 7 moved fr
 to marginal (0.051, 0.075). The earlier figures for that metric came from a *parametric*
 cluster-OLS fit rather than a permutation test, so this is a like-for-like improvement, not an
 instability in the result. Reporting the 10,000-permutation values throughout.
+
+## 7.3 Full audit of the analysis
+
+A systematic re-check of every step. Two real errors were found and fixed; several checks
+passed and are recorded so they do not need repeating.
+
+### Errors found and fixed
+
+**(i) Invalid permutation null for the age term.** `permutation_test_subject_scalar_model`
+permuted only the cognition variable, but was asked to return a p-value for `center(age)`.
+Because age was never shuffled, the age-entropy relationship survived every permutation, so the
+"null" distribution was centred on **+0.015** rather than zero and the observed effect sat
+absurdly far into its tail. This produced **p = 0.0013 for an effect whose valid permutation
+p is 0.167** (parametric p = 0.188, in agreement).
+
+Fixed by adding a `permute_col` parameter so each term is tested against a null built by
+permuting a variable that term actually involves, plus a runtime guard
+(`_warn_if_null_not_centred`) that warns whenever a null is centred far from zero relative to
+its spread. Two regression tests cover it. **Consequence: entropy rate is NOT significantly
+related to age.** An earlier version of this document claimed it was, and that claim was wrong.
+
+**(ii) Per-state slopes read as contrasts.** See §7.1.
+
+### Reporting error in the original manuscript (no effect on any statistic)
+
+`HMM_Entropy.m` applies `Ent_rate_secs = Ent_rate * 4; % converts to Nats/second`. The state
+sequence is sampled at **250 Hz**, so converting to nats/second requires ×250, not ×4. The
+reported values (mean 1.54) are therefore **nats per 4 samples = nats per 16 ms**; the true
+figure is ≈ 96 nats/second. Because this is a constant rescaling applied to every subject, **no
+correlation, model coefficient or p-value is affected** - but the axis label "Entropy Rate
+(Nats/Second)" in the 2023 Figure 6 is wrong by a factor of 62.5, and should be corrected or
+the unit restated.
+
+### Structural caveat worth disclosing
+
+Fractional occupancy is **compositional**: it sums to 1 within each subject, so the seven
+per-state cognition slopes are linearly dependent and **must sum to exactly zero** (verified:
+the fitted slopes sum to 0.000000000). The same holds for transition-into-state column sums,
+which sum to 7. Only **six of the seven are free**. Treating them as seven independent tests is
+therefore slightly loose, and the dependency is *negative*, which is not the positive-dependence
+regime BH-FDR is guaranteed under. In practice the effect is small and the direction is
+conservative for the states that survive, but it should be stated in Methods rather than left
+implicit.
+
+### Checks that passed
+
+| Check | Result |
+|---|---|
+| **Subject alignment** (do behavioural rows match the right MEG rows?) | **Verified.** All eight Table 1 statistics reproduce the 2023 paper exactly (age 10.09 ± 1.19; WASI 55.91 ± 9.69; every SDQ subscale; 47.8% male). Independently, the sign of every state's occupancy-cognition slope matches the 2023 GLM t-values (states 1, 3 negative; 4, 6, 7 positive) - misalignment would not preserve five signs. |
+| **Fractional occupancy** | Reproduces the 2023 Table 2 values to four decimal places for all seven states. The FO pipeline is identical. |
+| **Viterbi path segmentation** | `length(vpath) = sum(T) = 7,305,250` exactly, 46 subjects, all 7 states present - no silent truncation of the last subject. |
+| **Entropy rate port** | Correlation 1.000000 with the MATLAB original; max absolute difference 4.9e-5 (CSV rounding). |
+| **Cluster-OLS fast path** | Coefficients identical to MixedLM to ~1e-17, as expected when the random-effect variance is zero. |
+| **Simple-slope reparameterisation** | Identical fitted values and residual df to the treatment-coded fit; each simple slope equals reference slope + its contrast. |
+| **Switching rate vs lifetimes** | Switching rate 0.0697 implies ~57 ms mean state duration at 250 Hz; independently computed mean lifetimes are 49-81 ms. Consistent. |
+
+### Regenerated Table 2
+
+New per-subject values (mean across subjects of each subject's own mean), alongside the 2023
+published figures:
+
+| State | Interval ms (new) | (2023) | Lifetime ms (new) | (2023) | FO (new) | (2023) |
+|---|---|---|---|---|---|---|
+| 1 | 6416.6 (± 3961.0) | 1925.9 | 76.6 (± 44.6) | 129.49 | 0.0177 | 0.0177 |
+| 2 | 440.4 (± 152.1) | 293.9 | 63.4 (± 6.8) | 69.09 | 0.1311 | 0.1311 |
+| 3 | 257.0 (± 49.5) | 230.4 | 80.7 (± 51.5) | 95.24 | 0.2330 | 0.2330 |
+| 4 | 293.9 (± 133.0) | 191.3 | 50.6 (± 2.5) | 59.75 | 0.1578 | 0.1578 |
+| 5 | 339.7 (± 120.6) | 223.5 | 58.3 (± 4.5) | 63.05 | 0.1524 | 0.1524 |
+| 6 | 294.2 (± 128.3) | 194.8 | 49.3 (± 2.7) | 61.99 | 0.1542 | 0.1542 |
+| 7 | 297.7 (± 111.3) | 196.4 | 50.7 (± 3.0) | 61.20 | 0.1539 | 0.1538 |
+
+Two reasons the interval/lifetime columns differ from 2023 while FO matches exactly:
+
+1. **Different statistic.** The 2023 values pooled every *event* across subjects; these are the
+   mean across *subjects* of each subject's own mean. For state 1 especially - rarely visited,
+   so subjects contribute very unequal numbers of events - these differ substantially (6417 ms
+   vs 1926 ms). The per-subject version is the one the models use, so it is the one that should
+   be tabulated.
+2. **No minimum-duration threshold**, where the original excluded sub-50 ms visits (§5). This
+   shortens mean lifetimes, as expected.
 
 ## 8. Resolved decisions
 

@@ -37,7 +37,7 @@
   },
   "entropy_rate": {
     "center(WASI_T)": 0.0202979702029797,
-    "center(age)": 0.0012998700129987,
-    "center(WASI_T):center(age)": 0.6995300469953005
+    "center(WASI_T):center(age)": 0.6995300469953005,
+    "center(age)": 0.16748325167483252
   }
 }

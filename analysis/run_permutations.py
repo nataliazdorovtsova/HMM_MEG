@@ -41,7 +41,15 @@ FS = 250  # HMM_FinishPreprocessing.m: options.downsample = 250
 # Each state's OWN cognition slope, not its difference from a reference
 # state - see analysis.models.fit_state_metric_model_simple_slopes.
 STATE_TERMS = state_slope_terms()
-ENTROPY_TERMS = ["center(WASI_T)", "center(age)", "center(WASI_T):center(age)"]
+
+# Each term must be tested against a null built by permuting a variable that
+# term actually involves - otherwise its relationship with the outcome
+# survives every permutation and the p-value is meaningless. See
+# permutation_test_subject_scalar_model's docstring.
+ENTROPY_TERMS_BY_PERMUTED_COL = {
+    "WASI_T": ["center(WASI_T)", "center(WASI_T):center(age)"],
+    "age": ["center(age)"],
+}
 
 
 def main() -> None:
@@ -82,16 +90,24 @@ def main() -> None:
         print(res.to_string(index=False), flush=True)
         results[label] = dict(zip(res["term"], res["perm_p"]))
 
-    t0 = time.time()
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        ent = permutation_test_subject_scalar_model(
-            subject_level, outcome="entropy_rate", terms=ENTROPY_TERMS,
-            n_permutations=args.n_permutations, seed=args.seed,
+    entropy_results: dict[str, float] = {}
+    for permute_col, terms in ENTROPY_TERMS_BY_PERMUTED_COL.items():
+        t0 = time.time()
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ent = permutation_test_subject_scalar_model(
+                subject_level, outcome="entropy_rate", terms=terms,
+                n_permutations=args.n_permutations, seed=args.seed,
+                permute_col=permute_col,
+            )
+        print(
+            f"=== entropy_rate, permuting {permute_col} "
+            f"({args.n_permutations} permutations, {time.time() - t0:.0f}s) ===",
+            flush=True,
         )
-    print(f"=== entropy_rate ({args.n_permutations} permutations, {time.time() - t0:.0f}s) ===", flush=True)
-    print(ent.to_string(index=False), flush=True)
-    results["entropy_rate"] = dict(zip(ent["term"], ent["perm_p"]))
+        print(ent.to_string(index=False), flush=True)
+        entropy_results.update(dict(zip(ent["term"], ent["perm_p"])))
+    results["entropy_rate"] = entropy_results
 
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

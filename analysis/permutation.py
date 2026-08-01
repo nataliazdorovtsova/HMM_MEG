@@ -24,6 +24,8 @@ implementation would be a further refinement if reviewers push back on it.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import pandas as pd
 
@@ -57,6 +59,31 @@ def _two_sided_perm_p(observed: float, null_values: np.ndarray) -> float:
     n = len(null_values)
     exceed = np.sum(np.abs(null_values) >= np.abs(observed))
     return (exceed + 1) / (n + 1)
+
+
+def _warn_if_null_not_centred(term: str, null_values: np.ndarray, permuted_col: str) -> None:
+    """Guard against testing a term whose variable was never permuted.
+
+    A valid permutation null for a coefficient is centred on zero. If a term
+    does not involve the permuted column, its relationship with the outcome
+    survives every permutation, so its "null" is centred on roughly its
+    observed value and the resulting p-value is meaninglessly small.
+
+    This is not hypothetical: an earlier version of this module tested the
+    `center(age)` term for entropy rate while permuting only `WASI_T`,
+    producing p = 0.001 for an effect whose real permutation p is 0.17.
+    """
+    if len(null_values) < 20:
+        return
+    sd = float(np.std(null_values))
+    mean = float(np.mean(null_values))
+    if sd > 0 and abs(mean) > 0.5 * sd:
+        warnings.warn(
+            f"Permutation null for '{term}' is centred on {mean:.6g} (sd {sd:.6g}), "
+            f"not on zero. Only '{permuted_col}' is permuted, so this term's p-value "
+            f"is probably invalid - permute the variable the term involves instead.",
+            stacklevel=3,
+        )
 
 
 def permutation_test_state_metric_model(
@@ -121,6 +148,7 @@ def permutation_test_state_metric_model(
     rows = []
     for term in terms:
         valid_null = null_values[term][~np.isnan(null_values[term])]
+        _warn_if_null_not_centred(term, valid_null, cognition_col)
         rows.append({
             "term": term,
             "observed_coef": observed[term],
@@ -139,19 +167,28 @@ def permutation_test_subject_scalar_model(
     n_permutations: int = 2000,
     seed: int = 0,
     extra_terms: str = "",
+    permute_col: str | None = None,
 ) -> pd.DataFrame:
-    """Permutation p-values for `terms` from `fit_subject_scalar_model`,
-    permuting `cognition_col` across subjects (one row per subject, so this
-    is a standard full permutation - no repeated-measures subtlety).
+    """Permutation p-values for `terms` from `fit_subject_scalar_model`.
+
+    `permute_col` is the variable shuffled across subjects to build the null;
+    it defaults to `cognition_col`. **It must be a variable the tested terms
+    actually involve.** Testing `center(age)` while permuting `WASI_T` leaves
+    the age-outcome relationship intact in every permutation, so the "null"
+    is centred on the observed effect rather than zero and the p-value is
+    spuriously small - on this dataset that turned p = 0.17 into p = 0.001.
+    `_warn_if_null_not_centred` flags the mistake at runtime, but choosing
+    the right column is the real fix: run one call per variable tested.
     """
     rng = np.random.default_rng(seed)
+    permute_col = permute_col or cognition_col
 
     observed_result, _ = fit_subject_scalar_model(df, outcome=outcome, cognition_col=cognition_col, extra_terms=extra_terms)
     observed = {term: observed_result.params[term] for term in terms}
 
     null_values = {term: np.empty(n_permutations) for term in terms}
     for i in range(n_permutations):
-        permuted_df = _permute_subject_covariate(df, cognition_col, subject_col, rng)
+        permuted_df = _permute_subject_covariate(df, permute_col, subject_col, rng)
         result, _ = fit_subject_scalar_model(permuted_df, outcome=outcome, cognition_col=cognition_col, extra_terms=extra_terms)
         for term in terms:
             null_values[term][i] = result.params.get(term, np.nan)
@@ -159,6 +196,7 @@ def permutation_test_subject_scalar_model(
     rows = []
     for term in terms:
         valid_null = null_values[term][~np.isnan(null_values[term])]
+        _warn_if_null_not_centred(term, valid_null, permute_col)
         rows.append({
             "term": term,
             "observed_coef": observed[term],

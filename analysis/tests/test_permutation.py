@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -84,7 +86,9 @@ def test_permutation_cluster_ols_path_is_faster(synthetic_state_level):
 
 
 def test_permutation_test_subject_scalar_model_shape_and_range(synthetic_subject_level):
-    terms = ["center(WASI_T)", "center(age)"]
+    # only WASI terms here, since WASI is what's permuted - mixing in an age
+    # term would make the age null invalid (see the guard test below)
+    terms = ["center(WASI_T)", "center(WASI_T):center(age)"]
     result = permutation_test_subject_scalar_model(
         synthetic_subject_level, outcome="entropy_rate", terms=terms, n_permutations=20, seed=0,
     )
@@ -92,6 +96,37 @@ def test_permutation_test_subject_scalar_model_shape_and_range(synthetic_subject
     assert set(result["term"]) == set(terms)
     assert (result["n_valid_permutations"] == 20).all()
     assert result["perm_p"].between(0, 1).all()
+
+
+def test_warns_when_tested_term_is_not_the_permuted_variable(synthetic_subject_level):
+    # Regression test for a real bug: testing center(age) while permuting only
+    # WASI_T leaves the age-outcome relationship intact in every permutation,
+    # so the null is centred on the observed effect, not zero, and the
+    # p-value comes out spuriously tiny. Make sure that is now caught.
+    rng = np.random.default_rng(0)
+    df = synthetic_subject_level.copy()
+    # give age a strong, real relationship with the outcome so the mis-specified
+    # null is clearly off-centre
+    df["entropy_rate"] = 0.5 * df["age"] + rng.normal(0, 0.05, len(df))
+
+    with pytest.warns(UserWarning, match="not on zero"):
+        permutation_test_subject_scalar_model(
+            df, outcome="entropy_rate", terms=["center(age)"],
+            n_permutations=50, seed=0, permute_col="WASI_T",
+        )
+
+
+def test_no_warning_when_permuting_the_right_variable(synthetic_subject_level):
+    rng = np.random.default_rng(0)
+    df = synthetic_subject_level.copy()
+    df["entropy_rate"] = 0.5 * df["age"] + rng.normal(0, 0.05, len(df))
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        permutation_test_subject_scalar_model(
+            df, outcome="entropy_rate", terms=["center(age)"],
+            n_permutations=50, seed=0, permute_col="age",
+        )
 
 
 def test_permutation_p_value_never_zero():
