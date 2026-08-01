@@ -39,6 +39,7 @@ from analysis.viz.figures import (
     cognition_scatter,
     corr_heatmap,
     state_metric_distribution,
+    significant_transition_network,
     transition_correlation_heatmap,
     transition_heatmap,
     transition_network,
@@ -160,8 +161,12 @@ def _transition_cognition_data(subject_level, merged, transitions):
                           for j in range(1, n_states + 1)]
                          for i in range(1, n_states + 1)])
 
+    pvalues = np.array([[pearsonr(wide[(i, j)], cognition)[1]
+                         for j in range(1, n_states + 1)]
+                        for i in range(1, n_states + 1)])
+
     limit = max(np.abs(cellwise).max(), max(abs(v) for v in node_values.values()))
-    return mean_matrix, node_values, node_sizes, cellwise, limit
+    return mean_matrix, node_values, node_sizes, cellwise, pvalues, limit
 
 
 def figures_transition_cognition(subject_level, merged, transitions, output_dir: Path) -> list[Path]:
@@ -176,7 +181,7 @@ def figures_transition_cognition(subject_level, merged, transitions, output_dir:
     uncorrected - effects that paper itself reported as not surviving
     correction. Here inference lives on the nodes; edges carry structure only.
     """
-    mean_matrix, node_values, node_sizes, cellwise, limit = _transition_cognition_data(
+    mean_matrix, node_values, node_sizes, cellwise, pvalues, limit = _transition_cognition_data(
         subject_level, merged, transitions
     )
 
@@ -196,7 +201,18 @@ def figures_transition_cognition(subject_level, merged, transitions, output_dir:
     fig.savefig(heatmap_path, dpi=200)
     plt.close(fig)
 
-    return [network_path, heatmap_path]
+    # Original-style digraph: yellow nodes, one flat magenta/green arrow per
+    # transition significant at uncorrected p < 0.05, self-loops included.
+    # Descriptive - the legend states the threshold and that it is uncorrected.
+    fig, ax = plt.subplots(figsize=(8.6, 8.0))
+    significant_transition_network(cellwise, pvalues, node_sizes, alpha=0.05,
+                                   state_labels=STATE_LABELS, ax=ax)
+    fig.tight_layout()
+    significant_path = output_dir / "transitions_significant_digraph.png"
+    fig.savefig(significant_path, dpi=200)
+    plt.close(fig)
+
+    return [network_path, heatmap_path, significant_path]
 
 
 def figure_residual_qq(subject_level, merged, output_dir: Path) -> Path:

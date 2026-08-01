@@ -17,6 +17,9 @@ import pandas as pd
 import seaborn as sns
 
 from analysis.viz.style import (
+    NODE_YELLOW,
+    PIYG_NEGATIVE,
+    PIYG_POSITIVE,
     DIVERGING_CMAP,
     DIVERGING_CMAP_PIYG,
     SEQUENTIAL_CMAP,
@@ -303,4 +306,141 @@ def transition_correlation_heatmap(
     ax.set_xlabel("To state")
     ax.set_ylabel("From state")
     ax.tick_params(rotation=0)
+    return ax
+
+
+def significant_transition_network(
+    correlation_matrix: np.ndarray,
+    pvalue_matrix: np.ndarray,
+    node_sizes: dict[int, float],
+    alpha: float = 0.05,
+    state_labels: dict[int, str] | None = None,
+    layout: str = "circular",
+    seed: int = 7,
+    ax=None,
+):
+    """State network in the style of the original manuscript figure: yellow
+    nodes, and one arrow per transition whose correlation with cognitive
+    ability is significant at `alpha`.
+
+    Arrows are a flat magenta (negative) or green (positive) at a single
+    width - the sign is the only thing they encode, so a continuous colour
+    ramp or varying thickness would imply a precision the display does not
+    have. Self-transitions are drawn as loops when significant.
+
+    **These are uncorrected cell-wise tests** (49 of them at K = 7). The
+    figure is descriptive, and any caption must say so: the confirmatory
+    analysis is over transitions *into* each state, not individual cells.
+    `transition_network` shows that result.
+    """
+    import networkx as nx
+
+    apply_style()
+    ax = ax or plt.gca()
+
+    n_states = correlation_matrix.shape[0]
+    states = list(range(1, n_states + 1))
+    labels = state_labels or {k: f"State {k}" for k in states}
+
+    if layout == "circular":
+        angles = {s: np.pi / 2 - 2 * np.pi * i / n_states for i, s in enumerate(states)}
+        pos = {s: np.array([np.cos(a), np.sin(a)]) for s, a in angles.items()}
+    else:
+        scaffold = nx.complete_graph(states, create_using=nx.DiGraph)
+        pos = nx.spring_layout(scaffold, seed=seed)
+        angles = {s: np.arctan2(*pos[s][::-1]) for s in states}
+
+    size_max = max(node_sizes.values())
+    node_size = {s: 900 + 3400 * (node_sizes[s] / size_max) for s in states}
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(states)
+    positive, negative, self_loops = [], [], []
+    for i in states:
+        for j in states:
+            if pvalue_matrix[i - 1, j - 1] >= alpha:
+                continue
+            if i == j:
+                self_loops.append((i, correlation_matrix[i - 1, j - 1] > 0))
+            else:
+                graph.add_edge(i, j)
+                (positive if correlation_matrix[i - 1, j - 1] > 0 else negative).append((i, j))
+
+    for edges, colour in ((negative, PIYG_NEGATIVE), (positive, PIYG_POSITIVE)):
+        if edges:
+            nx.draw_networkx_edges(
+                graph, pos, edgelist=edges, ax=ax,
+                width=2.0, edge_color=colour, alpha=0.9, arrowsize=14,
+                connectionstyle="arc3,rad=0.12",
+                node_size=[node_size[s] for s in states],
+            )
+
+    # Self-loops need explicit geometry: an arrow from a point to itself has
+    # zero length and renders nothing. Each loop is an arc sitting just
+    # outside its node, on the far side from the centre so it never covers a
+    # label or another edge. Node radii are read back through the data
+    # transform so the loops stay attached at any figure size.
+    ax.set_xlim(-1.85, 1.85)
+    ax.set_ylim(-1.75, 1.75)
+    points_per_data_unit = abs(
+        ax.transData.transform((1.0, 0.0))[0] - ax.transData.transform((0.0, 0.0))[0]
+    )
+    for state, is_positive in self_loops:
+        x, y = pos[state]
+        dx, dy = np.cos(angles[state]), np.sin(angles[state])
+        node_radius = (np.sqrt(node_size[state] / np.pi)) / max(points_per_data_unit, 1e-9)
+        loop_radius = 0.95 * node_radius
+        centre = (x + (node_radius + loop_radius * 0.9) * dx,
+                  y + (node_radius + loop_radius * 0.9) * dy)
+        base_angle = np.degrees(np.arctan2(dy, dx))
+        colour = PIYG_POSITIVE if is_positive else PIYG_NEGATIVE
+        # drawn above the nodes: a loop tucked behind its own node reads as a
+        # stray stub rather than a self-transition
+        ax.add_patch(mpl.patches.Arc(
+            centre, 2 * loop_radius, 2 * loop_radius,
+            theta1=base_angle + 130, theta2=base_angle + 20,
+            lw=2.0, color=colour, zorder=4,
+        ))
+        head_angle = np.radians(base_angle + 130)
+        tip = (centre[0] + loop_radius * np.cos(head_angle),
+               centre[1] + loop_radius * np.sin(head_angle))
+        tangent = head_angle - np.pi / 2
+        ax.annotate(
+            "", xy=tip,
+            xytext=(tip[0] - 0.02 * np.cos(tangent), tip[1] - 0.02 * np.sin(tangent)),
+            arrowprops=dict(arrowstyle="-|>", mutation_scale=14, lw=2.0, color=colour),
+            zorder=4,
+        )
+
+    for state in states:
+        ax.scatter(
+            *pos[state], s=node_size[state], zorder=3,
+            color=NODE_YELLOW, edgecolors=TEXT_SECONDARY, linewidths=1.0,
+        )
+
+    # Self-loops sit radially outward from their node, exactly where the label
+    # would otherwise go, so looped states need their labels pushed clear.
+    looped = {state for state, _ in self_loops}
+    for state in states:
+        x, y = pos[state]
+        dx, dy = np.cos(angles[state]), np.sin(angles[state])
+        offset = 96 if state in looped else 36
+        ax.annotate(
+            labels[state], (x, y), xytext=(offset * dx, offset * dy), textcoords="offset points",
+            ha="center" if abs(dx) < 0.4 else ("left" if dx > 0 else "right"),
+            va="center" if abs(dy) < 0.4 else ("bottom" if dy > 0 else "top"),
+            fontsize=10, color=TEXT_PRIMARY,
+        )
+
+    ax.legend(
+        handles=[
+            mpl.lines.Line2D([], [], color=PIYG_POSITIVE, lw=2.4,
+                             label=f"Positive correlation (p < {alpha:g}, uncorrected)"),
+            mpl.lines.Line2D([], [], color=PIYG_NEGATIVE, lw=2.4,
+                             label=f"Negative correlation (p < {alpha:g}, uncorrected)"),
+        ],
+        loc="upper left", bbox_to_anchor=(-0.04, 1.04), frameon=False, fontsize=10,
+    )
+    ax.set_axis_off()
+    ax.set_aspect("equal")
     return ax

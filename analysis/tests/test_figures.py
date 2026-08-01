@@ -144,3 +144,36 @@ def test_transition_correlation_heatmap_is_symmetric_about_zero():
     # a diverging scale must be centred on zero or the colours mislead
     mesh = ax.collections[0]
     assert mesh.norm.vmin == pytest.approx(-mesh.norm.vmax)
+
+
+def test_significant_transition_network_draws_only_significant_edges():
+    from analysis.viz.figures import significant_transition_network
+
+    n = 7
+    r = np.zeros((n, n))
+    p = np.ones((n, n))
+    # three significant edges: two positive, one negative, one of them a self-loop
+    r[0, 1], p[0, 1] = 0.4, 0.01
+    r[2, 3], p[2, 3] = -0.4, 0.02
+    r[4, 4], p[4, 4] = 0.5, 0.001
+    sizes = {k: 0.1 for k in range(1, n + 1)}
+
+    ax = significant_transition_network(r, p, sizes, alpha=0.05)
+
+    from matplotlib.patches import Arc, FancyArrowPatch
+    arrows = [pt for pt in ax.patches if isinstance(pt, FancyArrowPatch)]
+    arcs = [pt for pt in ax.patches if isinstance(pt, Arc)]
+    assert len(arrows) == 2, "only the two significant off-diagonal edges should be drawn"
+    assert len(arcs) == 1, "the significant self-transition should be drawn as a loop"
+
+
+def test_significant_transition_network_legend_states_uncorrected():
+    from analysis.viz.figures import significant_transition_network
+
+    n = 7
+    r = np.zeros((n, n)); p = np.ones((n, n))
+    r[0, 1], p[0, 1] = 0.4, 0.01
+    ax = significant_transition_network(r, p, {k: 0.1 for k in range(1, n + 1)})
+
+    legend_text = " ".join(t.get_text() for t in ax.get_legend().get_texts())
+    assert "uncorrected" in legend_text, "the threshold must be disclosed as uncorrected"

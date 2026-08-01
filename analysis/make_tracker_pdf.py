@@ -46,6 +46,13 @@ FIGURE_CAPTIONS = {
         "of interest. Note the direction: state 3 is negative (higher cognitive ability, less "
         "occupancy) while states 4, 6 and 7 are positive."
     ),
+    "transitions_significant_digraph.png": (
+        "State transition digraph in the style of the original manuscript figure. One arrow per "
+        "transition whose correlation with cognitive ability reaches p < 0.05 UNCORRECTED "
+        "(18 of 49), green positive and magenta negative, including self-transitions for states "
+        "3, 4 and 6. Descriptive: these cell-wise tests are not corrected for multiplicity, and "
+        "the confirmatory analysis is over transitions into each state, not individual cells."
+    ),
     "transitions_into_state_network.png": (
         "Transitions into each state against cognitive ability. Node colour is the correlation "
         "between transitions into that state and cognitive ability; ringed and starred states "
@@ -77,6 +84,7 @@ FIGURE_CAPTIONS = {
 FIGURE_ORDER = [
     "state_metric_distributions.png",
     "cognition_fo_scatters.png",
+    "transitions_significant_digraph.png",
     "transitions_into_state_network.png",
     "transition_cognition_heatmap.png",
     "transition_matrix_heatmap.png",
