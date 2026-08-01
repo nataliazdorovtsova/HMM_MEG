@@ -1,0 +1,16 @@
+# Never commit exported participant-level data to this public repo.
+# Real exports belong outside the repo (see README) - this is defense in depth
+# in case they're ever generated inside the working tree.
+subject_level.csv
+state_level.csv
+transition_matrices.csv
+transition_matrices.npz
+*.mat
+*.xlsx
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
