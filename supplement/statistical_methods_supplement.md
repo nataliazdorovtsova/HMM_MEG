@@ -234,40 +234,105 @@ Also added: a log-scale option for `state_metric_distribution`, needed because i
 state 1 range (up to 22s) otherwise crushes every other state's variation into an unreadable
 sliver near zero on a linear axis.
 
+All figures are regenerated from the exported data by `analysis/make_figures.py`, so
+`supplement/figures/` holds reproducible artifacts rather than hand-pasted one-offs:
+
+```
+python -m analysis.make_figures --export-dir <export dir> --output-dir supplement/figures
+```
+
+**Per-state distributions** (Reviewer #3 concern 2b: all three metrics shown, with individual
+subject points overlaid - the original Figure 4 showed only lifetimes/intervals, and never
+individual data points):
+
+![Per-state distributions of FO, lifetime and interval](figures/state_metric_distributions.png)
+
+**Cognition vs. fractional occupancy** for the four states surviving correction (§7). Note the
+direction: state 3 is **negative** (higher cognitive ability -> less time in that state) while
+states 4, 6 and 7 are all **positive**:
+
+![Cognition vs FO for states 3, 4, 6, 7](figures/cognition_fo_scatters.png)
+
+**Mean transition matrix**, self-transitions masked:
+
+![Mean state transition matrix](figures/transition_matrix_heatmap.png)
+
+**Cognitive/behavioural correlations**:
+
+![Correlations between cognitive and behavioural scores](figures/cognitive_behavioural_correlations.png)
+
 ## 7. Final result: one correction pass across the whole family
 
-All three blockers below are now resolved, so the comprehensive correction has been run for
-real (`analysis/correction.py`, BH-FDR, alpha=0.05) across every state x cognition term from
-FO, lifetime, interval, transition-into-state, and entropy rate - 31 tests total. Switching
-rate and max_FO are deliberately excluded (§6.3: robustness/supplementary, not independent
-claims - including them would only dilute the correction budget for outcomes that matter).
+All blockers in §8 are resolved, so the comprehensive correction has been run for real
+(`analysis/correction.py`, BH-FDR, alpha=0.05) across every state x cognition term from FO,
+lifetime, interval, transition-into-state, and entropy rate - 31 tests total. Switching rate and
+max_FO are deliberately excluded (§6.3: robustness/supplementary, not independent claims -
+including them would only dilute the correction budget for outcomes that matter).
 
-**Significant after correction** (17 of 31 terms):
+All p-values below are from **10,000-permutation** tests (see §7.1 on why the earlier
+500-permutation figures were refined). Adjusted values below ~0.031 are tied at the BH-FDR
+step-up threshold, which is expected when many raw p-values cluster tightly.
+
+**Significant after correction** (16 of 31 terms):
 
 | State | FO | Interval | Transition-into-state | Lifetime |
 |---|---|---|---|---|
-| 2 | - | significant | - | - |
-| 3 | **significant** | significant | **significant** | - |
-| 4 | **significant** | significant | **significant** | not quite (p_adj=0.074) |
-| 5 | - | significant | - | - |
-| 6 | **significant** | significant | **significant** | - |
-| 7 | **significant** | significant | not quite (p_adj=0.072) | - |
+| 2 | ns (0.067) | **0.030** | ns (0.161) | ns (0.106) |
+| 3 | **0.037** | **0.030** | **0.030** | ns (0.700) |
+| 4 | **0.030** | **0.030** | *marginal (0.051)* | ns (0.086) |
+| 5 | ns (0.080) | **0.030** | ns (0.146) | ns (0.106) |
+| 6 | **0.030** | **0.030** | **0.040** | ns (0.090) |
+| 7 | **0.030** | **0.030** | *marginal (0.075)* | ns (0.090) |
 
-Plus: entropy rate's relationship with **age** (p_adj=0.022, the single strongest result in the
-whole table) and with cognition (p_adj=0.038) both survive.
+Subject-level / main effects: entropy rate with **age** p_adj = **0.030**; entropy rate with
+**cognition** p_adj = **0.040**; FO main effect of cognition **0.030**; interval main effect
+**0.030**. The entropy rate **age x cognition interaction is not significant** (p_adj = 0.70) -
+i.e. the cognition relationship does not itself change across this age range, which is worth
+reporting rather than omitting.
 
-**States 3, 4, and 6 are significant across three independently-computed metrics** (FO,
-interval, transition-into-state) under one correction spanning the entire paper - this is a
-substantially more convergent, defensible result than any single analysis run in isolation, and
-directly answers the reviewers' core complaint about uncorrected, cherry-picked, per-metric
-testing. State 7 is significant in two of three and narrowly misses the third. States 2 and 5
-only appear via interval, which §6.1 already flags as likely non-state-specific (redundant with
-occupancy) rather than a distinct finding - weaker evidence than the states above.
+### Reading the pattern: *how often*, not *how long*
 
-Recommended framing for the manuscript: **states 3, 4, 6 (and likely 7)** as the primary
-cognition-related states, entropy rate's age relationship as a second headline result,
-switching rate/max_FO/lifetime reported as supporting/robustness detail rather than primary
-claims. This is a recommendation, not yet given final author sign-off.
+The four metrics are not interchangeable, and the pattern across them is the actual finding:
+
+- **Fractional occupancy** gives **state-specific** effects: states **3, 4, 6, 7** significant;
+  states 2 and 5 not. Direction matters - state 3 is **negative** (higher cognitive ability ->
+  *less* occupancy) while 4, 6, 7 are **positive** (see `figures/cognition_fo_scatters.png`).
+- **Transition-into-state** is the most conservative and also state-specific: only **3 and 6**
+  clear correction, with **4 (0.051) and 7 (0.075) marginal**. Same direction pattern as FO.
+- **Interval** is significant for **every state**, with near-identical coefficients
+  (-0.146 to -0.152). That uniformity is the tell: mean interval between visits to *any* state
+  shrinks whenever a child switches states more overall, so this is very likely the global
+  switching-rate/entropy effect re-expressed once per state, **not six independent
+  state-specific findings**. It should be reported as such, not as the paper's broadest result.
+- **Lifetime survives for no state at all** (best p_adj = 0.086).
+
+Taken together: individual differences here are in **how often children enter these states, not
+how long they stay once there**. That is a direct, evidence-based answer to Reviewer #3's
+concern 5 ("higher fractional occupancies can be a consequence of more transitions into a
+state… or by longer life times, which is not tested") - it is now tested, and the answer is
+transitions rather than durations.
+
+**States 3 and 6 are significant on both state-specific metrics**; states 4 and 7 are
+significant on occupancy and marginal on transitions. This convergence across
+independently-computed metrics under one correction spanning the entire paper is substantially
+more defensible than any single analysis in isolation.
+
+Recommended framing for the manuscript: **states 3, 4, 6 and 7** as the cognition-related
+states (noting 4 and 7 rest on occupancy with marginal transition support), entropy rate's
+**age** relationship as a second headline result, the *how often not how long* contrast as the
+mechanistic story, and switching rate / max FO / lifetime as supporting detail. This is a
+recommendation pending author sign-off.
+
+### 7.1 Why the p-values changed from the 500-permutation run
+
+The earlier pass used 500 permutations, which bounds resolution at 1/501 ≈ 0.002 and leaves
+real Monte-Carlo noise on every estimate. All headline tests were re-run at **10,000
+permutations** (feasible because of the verified cluster-OLS fast path - see
+`analysis/permutation.py`). Conclusions are stable for FO, interval and lifetime; the
+meaningful change is in **transition-into-state**, where states 4 and 7 moved from significant
+to marginal (0.051, 0.075). The earlier figures for that metric came from a *parametric*
+cluster-OLS fit rather than a permutation test, so this is a like-for-like improvement, not an
+instability in the result. Reporting the 10,000-permutation values throughout.
 
 ## 8. Resolved decisions
 
