@@ -5,10 +5,10 @@ behind each decision - written so the choices are justifiable to reviewers, not 
 Numbers here come from the real exported dataset (46 subjects, K=7 HMM states), generated via
 `HMM_ExportForPython.m` and analysed with the `analysis/` Python package in this repo.
 
-**Status:** lifetime/interval metric definition decided (§5). Statistical method for the
-headline state x cognition finding (§4) has a recommendation (permutation-based results,
-states 3/4/6/7) awaiting final author sign-off before it's treated as settled for the
-manuscript.
+**Status:** complete through the final comprehensive correction pass (§7). All decisions
+resolved (§8). Remaining work is manuscript-side: writing up the recommended framing (§7) with
+final author sign-off, plus the non-code items in the original plan (reference list gaps,
+literature review additions - see repo root plan notes, not reproduced here).
 
 ## 1. Motivation
 
@@ -149,12 +149,140 @@ this reasoning directly if asked. A genuine missing value (`NaN`) is recorded wh
 never visits a state at all, rather than a fabricated zero, which also directly answers
 Reviewer #3's question about whether some subjects never visit certain states.
 
-## 6. Final decision and justification
+## 6. Extended results: lifetime, interval, transition-into-state, switching rate, max FO
 
-*Statistical method (§4): permutation-based results recommended as primary, pending final
-author confirmation. Lifetime/interval definition (§5): decided.*
+### 6.1 Lifetime and interval
 
-## 7. Reproducibility
+Same diagnostics-first approach as FO: raw residuals badly non-normal (lifetime W=0.536,
+p=2.8e-28; interval W=0.426, p=9.6e-31 - worse than FO, expected for duration/waiting-time
+data). Rank-INT outperformed a log-seconds transform on both (lifetime W=0.93 vs 0.79; interval
+W=0.98 vs 0.91), so permutation testing (500 perms, raw seconds, same tie-breaker logic as FO)
+was run directly rather than trusting either transform's parametric p-values:
+
+| State x cognition term | Lifetime (perm_p, uncorrected) | Interval (perm_p, uncorrected) |
+|---|---|---|
+| State 2 | 0.076 | 0.014 |
+| State 3 | 0.679 (not significant) | 0.014 |
+| State 4 | **0.050** | 0.014 |
+| State 5 | 0.068 | 0.016 |
+| State 6 | 0.056 | 0.014 |
+| State 7 | 0.056 | 0.016 |
+| Main cognition effect | 0.044 | 0.014 |
+
+Lifetime: only state 4 clearly stands out (consistent with the FO/rank-INT and FO/permutation
+results), others marginal. **Interval: every state shows an almost identical effect size
+(-0.146 to -0.152) and p-value** - this doesn't differentiate between states at all, which
+fits the interpretation that interval time is largely just the inverse of how often a state is
+visited overall (i.e., redundant with FO/occupancy) rather than adding state-specific
+information - a concrete instance of the exact metric-redundancy concern Reviewer #1 raised
+(general comments, and comment 6 in Results). These raw p-values still need the one
+comprehensive correction pass (§7) before being called significant or not.
+
+### 6.2 Transition-into-state (replaces the 49-cell/7-column-sum sequence)
+
+`fit_transition_matrix_model` (see `analysis/models.py`) was rebuilt after the original full
+K x K x cognition three-way interaction crashed on the real data (`LinAlgError: Singular
+matrix` - over-parameterized for 46 subjects, 49 cells). It now fits column sums (total
+probability of transitioning INTO each state) as the single planned test, structurally
+identical to the FO/lifetime/interval models.
+
+The mixed-model version of this ran without crashing but failed to converge. Rather than
+report an unconverged result, it was refit as OLS with subject-clustered robust standard
+errors (`fit_state_metric_model_cluster_ols`) - motivated by a **project-level observation**:
+the random-effect ("Group Var") variance collapsed to ~0 in essentially every mixed model
+fitted in this project (FO, lifetime, interval, transition-into-state), suggesting the
+per-subject random intercept wasn't doing meaningful work once state was accounted for.
+Cluster-robust OLS still accounts for each subject's 7 correlated state-level rows, without
+estimating a variance component the data doesn't support, and is numerically far more stable.
+This ran cleanly with no convergence issues.
+
+**One structural caveat, not a bug**: because each subject's column sums across all 7 states
+are constrained to total exactly 7 (transition matrix rows sum to 1), any subject-level
+covariate that doesn't interact with state - here, the `age` and `sex` main effects - is
+mathematically unidentifiable in this specific model (their coefficients and SEs come out as
+~0 with near-zero uncertainty, e.g. 1e-16). **Do not interpret those two terms as "no effect" -
+they are structurally inestimable here, not tested.** Only the state main effects and
+state x cognition interactions are meaningful in this model.
+
+### 6.3 Switching rate and max FO
+
+Confirmed on real data: switching rate and entropy rate correlate at r=0.998 (matches the
+original HMM_Entropy.m note). Both switching_rate and max_FO show the same non-normal-residual
+pattern as every other outcome in this project (Shapiro p=1.7e-5 and 5.0e-6). **Decided**:
+switching rate is reported as a robustness/consistency check alongside entropy rate (not an
+independent claim, given the near-perfect correlation), and max_FO is reported as a
+supplementary summary. Neither is entered into the main multiplicity-correction family in §7 -
+including a variable that isn't an independent hypothesis would just dilute the correction
+budget for the outcomes that matter.
+
+### 6.4 Figures
+
+`analysis/viz/figures.py` was run against the real data for the first time and visually
+inspected (not just executed) - this caught two real problems no test would have:
+
+1. **Correlation heatmap**: title text overlapped the colorbar at full length. Fixed by
+   wrapping the title (not shrinking the font - reviewers already complained the original
+   figures' text was too small).
+2. **Transition heatmap**: at this HMM's ~250Hz effective sampling rate, self-transition
+   probability is ~0.99+ for every state, so the raw matrix on a 0-1 colour scale showed
+   nothing but a dark diagonal - the actually informative "which state do you switch to"
+   structure was invisible. Fixed by masking the diagonal before plotting and rescaling colour
+   to the off-diagonal range, matching the original `HMM_Entropy.m` script's own approach
+   (`Ao(find(eye(nstate))) = 0`) rather than inventing a new convention.
+
+Also added: a log-scale option for `state_metric_distribution`, needed because interval time's
+state 1 range (up to 22s) otherwise crushes every other state's variation into an unreadable
+sliver near zero on a linear axis.
+
+## 7. Final result: one correction pass across the whole family
+
+All three blockers below are now resolved, so the comprehensive correction has been run for
+real (`analysis/correction.py`, BH-FDR, alpha=0.05) across every state x cognition term from
+FO, lifetime, interval, transition-into-state, and entropy rate - 31 tests total. Switching
+rate and max_FO are deliberately excluded (§6.3: robustness/supplementary, not independent
+claims - including them would only dilute the correction budget for outcomes that matter).
+
+**Significant after correction** (17 of 31 terms):
+
+| State | FO | Interval | Transition-into-state | Lifetime |
+|---|---|---|---|---|
+| 2 | - | significant | - | - |
+| 3 | **significant** | significant | **significant** | - |
+| 4 | **significant** | significant | **significant** | not quite (p_adj=0.074) |
+| 5 | - | significant | - | - |
+| 6 | **significant** | significant | **significant** | - |
+| 7 | **significant** | significant | not quite (p_adj=0.072) | - |
+
+Plus: entropy rate's relationship with **age** (p_adj=0.022, the single strongest result in the
+whole table) and with cognition (p_adj=0.038) both survive.
+
+**States 3, 4, and 6 are significant across three independently-computed metrics** (FO,
+interval, transition-into-state) under one correction spanning the entire paper - this is a
+substantially more convergent, defensible result than any single analysis run in isolation, and
+directly answers the reviewers' core complaint about uncorrected, cherry-picked, per-metric
+testing. State 7 is significant in two of three and narrowly misses the third. States 2 and 5
+only appear via interval, which §6.1 already flags as likely non-state-specific (redundant with
+occupancy) rather than a distinct finding - weaker evidence than the states above.
+
+Recommended framing for the manuscript: **states 3, 4, 6 (and likely 7)** as the primary
+cognition-related states, entropy rate's age relationship as a second headline result,
+switching rate/max_FO/lifetime reported as supporting/robustness detail rather than primary
+claims. This is a recommendation, not yet given final author sign-off.
+
+## 8. Resolved decisions
+
+1. **Switching rate vs. entropy rate framing**: switching rate stays a robustness/consistency
+   check alongside entropy rate, not an independent claim (§6.3). Author-confirmed.
+2. **Transition-into-state's non-convergence**: resolved by refitting as cluster-robust OLS
+   instead of a mixed model (§6.2) - runs cleanly, no convergence issues.
+3. **Low-FO outlier points** (§3.2, §6.4 investigation): identified as two distinct patterns -
+   subjects 1/41/23/14 (mildly low state-3 occupancy, unremarkable otherwise) and subjects
+   35/10/39/29 (single-state-dominance profile, high `max_FO`, the same signature the original
+   pipeline used to exclude a different participant for corrupted data). **Author decision:
+   leave as-is** - extensive manual preprocessing/QC was already done on this dataset (including
+   excluding a participant for corrupted data), and no further action was requested.
+
+## 9. Reproducibility
 
 - Code: `analysis/` package, this repo (`HMM_MEG`)
 - Data: exported via `HMM_ExportForPython.m` from `hmm_k7_clean3.mat` / `Gamma_k7_clean3.mat` /

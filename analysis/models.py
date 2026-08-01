@@ -77,6 +77,42 @@ def fit_state_metric_model(
     return result, diagnostics
 
 
+def fit_state_metric_model_cluster_ols(
+    df: pd.DataFrame,
+    metric: str,
+    cognition_col: str = "WASI_T",
+    state_col: str = "state",
+    subject_col: str = "subject_id",
+):
+    """Same formula as `fit_state_metric_model`, but OLS with cluster-robust
+    (subject-clustered) standard errors instead of a mixed model's random
+    intercept.
+
+    Motivation: across every mixed model fit in this project (FO, lifetime,
+    interval, transition-into-state), the random-effect variance ("Group
+    Var") has repeatedly come out at or near 0, and the transition-into-state
+    model failed to converge on the real data. A near-zero variance component
+    is a sign the mixed model isn't buying anything a subject-clustered OLS
+    wouldn't already give: cluster-robust SEs still account for each
+    subject's 7 state-level rows being correlated, without trying to estimate
+    a variance component the data doesn't support - and OLS is numerically
+    far more stable than MixedLM's iterative optimizer. Use this as a
+    robustness check against the mixed-model result, not a blind replacement
+    for it.
+    """
+    fixed_rhs = (
+        f"C({state_col}) * center({cognition_col}) + center(age) * center({cognition_col}) + C(sex)"
+    )
+    formula = f"{metric} ~ {fixed_rhs}"
+    result = smf.ols(formula, df).fit(cov_type="cluster", cov_kwds={"groups": df[subject_col]})
+
+    diagnostics = {
+        "normality": _residual_normality(result.resid.values),
+        "vif": _vif(df, fixed_rhs),
+    }
+    return result, diagnostics
+
+
 def fit_subject_scalar_model(
     df: pd.DataFrame,
     outcome: str,
@@ -103,31 +139,45 @@ def fit_subject_scalar_model(
 
 def fit_transition_matrix_model(transitions_long: pd.DataFrame, subject_level: pd.DataFrame,
                                   cognition_col: str = "WASI_T"):
-    """Single omnibus model over the full transition matrix, replacing the
-    49-cell-then-7-column-sum sequence in HMM_Entropy.m.
+    """Single, planned model for whether cognition relates to the probability of
+    transitioning INTO each state, replacing the 49-cell-then-7-column-sum
+    sequence in HMM_Entropy.m (49 cell-wise correlations found nothing, so the
+    7 column-sum correlations were tried as an unplanned second attempt - the
+    exact "moved the goalposts after the first test failed" problem Reviewer #3
+    flagged, concern 5).
+
+    An earlier version of this function fit the full K x K x cognition
+    three-way interaction (49 cells) as fixed effects. On the real data (46
+    subjects) that raised `LinAlgError: Singular matrix` - over-parameterized,
+    not just slow to converge. Rather than patch around that, this collapses
+    each subject's transition matrix to its column sums (total probability of
+    transitioning into each state, summed over the state transitioned from)
+    BEFORE fitting - which is what the column-sum analysis was actually asking
+    in the first place. That makes it structurally identical to
+    `fit_state_metric_model` (7 states x 46 subjects).
+
+    Uses `fit_state_metric_model_cluster_ols` rather than the MixedLM version:
+    on the real data the mixed model ran but failed to converge, and its
+    random-effect variance collapsed to ~0 (the same pattern seen in the
+    FO/lifetime/interval mixed models) - cluster-robust OLS gives the same
+    subject-level correlation adjustment without the convergence problem.
 
     `transitions_long` must have columns subject_id, from_state, to_state,
     probability (as produced by analysis.io.load_transition_matrices).
-    from_state and to_state are both entered as categorical fixed effects
-    together with cognition, so the column-sum view becomes a planned
-    follow-up decomposition of this one test rather than a second,
-    independently-corrected round of testing.
-
-    Note: with K states this fits a K x K x cognition three-way interaction
-    (49 cells for K=7), which is a lot of fixed-effect parameters relative
-    to ~46 subjects. If this fails to converge on the real data, the first
-    thing to drop is the three-way interaction term (keep
-    `C(from_state)*C(to_state) + cognition` and test cognition's main
-    effect plus its two-way interaction with `to_state` only, which is
-    what the column-sum follow-up actually asks).
     """
-    df = transitions_long.merge(subject_level, on="subject_id", how="left")
-    fixed_rhs = f"C(from_state) * C(to_state) * center({cognition_col}) + center(age) + C(sex)"
-    formula = f"probability ~ {fixed_rhs}"
-    model = smf.mixedlm(formula, df, groups=df["subject_id"])
-    result = model.fit(reml=True)
+    column_sums = transition_column_sums(transitions_long)
+    df = column_sums.merge(subject_level, on="subject_id", how="left")
+    return fit_state_metric_model_cluster_ols(df, metric="transition_into_sum", cognition_col=cognition_col)
 
-    diagnostics = {
-        "normality": _residual_normality(result.resid.values),
-    }
-    return result, diagnostics
+
+def transition_column_sums(transitions_long: pd.DataFrame) -> pd.DataFrame:
+    """Per subject, total probability of transitioning INTO each state
+    (summed over the state transitioned from). Returned in the same
+    subject_id/state long-format shape `fit_state_metric_model` expects.
+    """
+    return (
+        transitions_long.groupby(["subject_id", "to_state"])["probability"]
+        .sum()
+        .reset_index()
+        .rename(columns={"to_state": "state", "probability": "transition_into_sum"})
+    )

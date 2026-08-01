@@ -5,7 +5,13 @@ import pandas as pd
 import pytest
 
 from analysis.correction import correct_pvalues
-from analysis.models import fit_state_metric_model, fit_subject_scalar_model
+from analysis.models import (
+    fit_state_metric_model,
+    fit_state_metric_model_cluster_ols,
+    fit_subject_scalar_model,
+    fit_transition_matrix_model,
+    transition_column_sums,
+)
 
 N_SUBJECTS = 30
 N_STATES = 7
@@ -41,6 +47,57 @@ def synthetic_state_level(synthetic_subject_level):
             })
     state_df = pd.DataFrame(rows)
     return state_df.merge(synthetic_subject_level, on="subject_id", how="left")
+
+
+@pytest.fixture
+def synthetic_transitions(synthetic_subject_level):
+    rng = np.random.default_rng(2)
+    rows = []
+    for subject_id in synthetic_subject_level["subject_id"]:
+        # each subject's matrix rows should sum to 1, like a real transition matrix
+        matrix = rng.dirichlet(np.ones(N_STATES), size=N_STATES)
+        for from_state in range(1, N_STATES + 1):
+            for to_state in range(1, N_STATES + 1):
+                rows.append({
+                    "subject_id": subject_id,
+                    "from_state": from_state,
+                    "to_state": to_state,
+                    "probability": matrix[from_state - 1, to_state - 1],
+                })
+    return pd.DataFrame(rows)
+
+
+def test_fit_transition_matrix_model_runs_on_46x49_scale_data(synthetic_transitions, synthetic_subject_level):
+    # Regression test: an earlier version of this function fit the full
+    # K x K x cognition three-way interaction directly on the 49-cell data,
+    # which raised LinAlgError: Singular matrix on the real 46-subject
+    # dataset (over-parameterized). This checks the column-sum reduction
+    # actually avoids that failure mode.
+    result, diagnostics = fit_transition_matrix_model(synthetic_transitions, synthetic_subject_level)
+
+    assert result.params is not None
+    assert "normality" in diagnostics
+    assert "vif" in diagnostics
+
+
+def test_transition_column_sums_matches_hand_computed_expectation(synthetic_transitions):
+    expected = synthetic_transitions[
+        (synthetic_transitions["subject_id"] == 1) & (synthetic_transitions["to_state"] == 3)
+    ]["probability"].sum()
+
+    result = transition_column_sums(synthetic_transitions)
+
+    actual = result[(result["subject_id"] == 1) & (result["state"] == 3)]["transition_into_sum"].iloc[0]
+    assert actual == pytest.approx(expected)
+
+
+def test_fit_state_metric_model_cluster_ols_runs_and_returns_diagnostics(synthetic_state_level):
+    result, diagnostics = fit_state_metric_model_cluster_ols(synthetic_state_level, metric="FO")
+
+    assert result.params is not None
+    assert result.cov_type == "cluster"
+    assert "normality" in diagnostics
+    assert "vif" in diagnostics
 
 
 def test_fit_state_metric_model_runs_and_returns_diagnostics(synthetic_state_level):
