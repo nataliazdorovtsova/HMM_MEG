@@ -48,13 +48,14 @@ def main() -> None:
 
     print()
     print("=" * 74)
-    print("BY STATE - state x cognition interaction terms (p_adjusted)")
+    print("BY STATE - each state's own cognition slope (p_adjusted)")
     print("=" * 74)
     print(f"{'State':<7}" + "".join(f"{m:<18}" for m in METRIC_ORDER))
-    for state in range(2, 8):
+    for state in range(1, 8):
         row = f"{state:<7}"
         for metric in METRIC_ORDER:
-            match = corrected[corrected["term"] == f"{metric}__C(state)[T.{state}]:center(WASI_T)"]
+            term = f"{metric}__C(state)[{state}]:center(WASI_T)"
+            match = corrected[corrected["term"] == term]
             if match.empty:
                 row += f"{'-':<18}"
             else:
@@ -64,7 +65,7 @@ def main() -> None:
     print("\n* = significant after correction")
 
     print()
-    print("Main / subject-level effects:")
+    print("Subject-level effects:")
     for _, r in corrected[~corrected["term"].str.contains(r"C\(state\)")].iterrows():
         marker = "*" if r["significant"] else " "
         print(f"  {marker} {r['term']:<45} p_raw={r['p_raw']:.5f}  p_adj={r['p_adjusted']:.5f}")

@@ -30,6 +30,7 @@ import pandas as pd
 from analysis.models import (
     fit_state_metric_model,
     fit_state_metric_model_cluster_ols,
+    fit_state_metric_model_simple_slopes,
     fit_subject_scalar_model,
 )
 
@@ -68,6 +69,7 @@ def permutation_test_state_metric_model(
     n_permutations: int = 1000,
     seed: int = 0,
     use_cluster_ols: bool = False,
+    simple_slopes: bool = False,
 ) -> pd.DataFrame:
     """Permutation p-values for `terms` (coefficient names as they appear in
     the fitted model's `.params`, e.g. `C(state)[T.3]:center(WASI_T)`) from
@@ -91,9 +93,20 @@ def permutation_test_state_metric_model(
     Do not enable this blindly on a dataset where the random-effect variance
     is genuinely non-zero: there the two estimators would legitimately
     differ, and the MixedLM path is the right one.
+
+    `simple_slopes=True` uses `fit_state_metric_model_simple_slopes`, whose
+    coefficients are each state's own cognition slope rather than its
+    difference from the reference state. Pass the term names from
+    `analysis.models.state_slope_terms` with it. This is what the paper's
+    per-state claims need; see that function's docstring.
     """
     rng = np.random.default_rng(seed)
-    fit_fn = fit_state_metric_model_cluster_ols if use_cluster_ols else fit_state_metric_model
+    if simple_slopes:
+        fit_fn = fit_state_metric_model_simple_slopes
+    elif use_cluster_ols:
+        fit_fn = fit_state_metric_model_cluster_ols
+    else:
+        fit_fn = fit_state_metric_model
 
     observed_result, _ = fit_fn(df, metric=metric, cognition_col=cognition_col, state_col=state_col, subject_col=subject_col)
     observed = {term: observed_result.params[term] for term in terms}

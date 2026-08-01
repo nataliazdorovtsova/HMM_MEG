@@ -269,59 +269,97 @@ lifetime, interval, transition-into-state, and entropy rate - 31 tests total. Sw
 max_FO are deliberately excluded (§6.3: robustness/supplementary, not independent claims -
 including them would only dilute the correction budget for outcomes that matter).
 
-All p-values below are from **10,000-permutation** tests (see §7.1 on why the earlier
-500-permutation figures were refined). Adjusted values below ~0.031 are tied at the BH-FDR
-step-up threshold, which is expected when many raw p-values cluster tightly.
+All p-values below are from **10,000-permutation** tests on **per-state simple slopes** - each
+state's own cognition slope, not its difference from a reference state. See §7.1 for why this
+distinction was corrected mid-analysis and what it changed.
 
-**Significant after correction** (16 of 31 terms):
+**Significant after correction** (7 of 31 terms). Each cell is that state's own cognition
+slope, BH-FDR adjusted across all 31:
 
-| State | FO | Interval | Transition-into-state | Lifetime |
-|---|---|---|---|---|
-| 2 | ns (0.067) | **0.030** | ns (0.161) | ns (0.106) |
-| 3 | **0.037** | **0.030** | **0.030** | ns (0.700) |
-| 4 | **0.030** | **0.030** | *marginal (0.051)* | ns (0.086) |
-| 5 | ns (0.080) | **0.030** | ns (0.146) | ns (0.106) |
-| 6 | **0.030** | **0.030** | **0.040** | ns (0.090) |
-| 7 | **0.030** | **0.030** | *marginal (0.075)* | ns (0.090) |
+| State | Label | FO | Transition-into | Interval | Lifetime |
+|---|---|---|---|---|---|
+| 1 | DMN+ | **0.035** (−) | ns (0.169) | **0.046** (+) | ns (0.121) |
+| 2 | VT+ | ns (0.326) | ns (0.389) | ns (0.770) | ns (0.176) |
+| 3 | DMN− | **0.046** (−) | **0.035** (−) | ns (0.121) | ns (0.121) |
+| 4 | SM+/FT− | **0.035** (+) | **0.035** (+) | ns (0.770) | ns (0.770) |
+| 5 | V+/FT− | ns (0.259) | ns (0.770) | ns (0.953) | ns (0.094) |
+| 6 | FP+/V− | **0.035** (+) | **0.035** (+) | ns (0.617) | ns (0.524) |
+| 7 | LP+/DMN− | *marginal (0.057)* (+) | *marginal (0.076)* (+) | ns (0.802) | ns (0.330) |
 
-Subject-level / main effects: entropy rate with **age** p_adj = **0.030**; entropy rate with
-**cognition** p_adj = **0.040**; FO main effect of cognition **0.030**; interval main effect
-**0.030**. The entropy rate **age x cognition interaction is not significant** (p_adj = 0.70) -
-i.e. the cognition relationship does not itself change across this age range, which is worth
-reporting rather than omitting.
+Signs in brackets give the direction of the relationship with cognitive ability.
 
-### Reading the pattern: *how often*, not *how long*
+Subject-level effects:
 
-The four metrics are not interchangeable, and the pattern across them is the actual finding:
+| Effect | p_raw | p_adjusted | |
+|---|---|---|---|
+| Entropy rate ~ **age** | 0.0013 | **0.035** | significant |
+| Entropy rate ~ **cognition** | 0.0203 | 0.057 | *marginal* |
+| Entropy rate ~ age × cognition | 0.6995 | 0.770 | ns |
 
-- **Fractional occupancy** gives **state-specific** effects: states **3, 4, 6, 7** significant;
-  states 2 and 5 not. Direction matters - state 3 is **negative** (higher cognitive ability ->
-  *less* occupancy) while 4, 6, 7 are **positive** (see `figures/cognition_fo_scatters.png`).
-- **Transition-into-state** is the most conservative and also state-specific: only **3 and 6**
-  clear correction, with **4 (0.051) and 7 (0.075) marginal**. Same direction pattern as FO.
-- **Interval** is significant for **every state**, with near-identical coefficients
-  (-0.146 to -0.152). That uniformity is the tell: mean interval between visits to *any* state
-  shrinks whenever a child switches states more overall, so this is very likely the global
-  switching-rate/entropy effect re-expressed once per state, **not six independent
-  state-specific findings**. It should be reported as such, not as the paper's broadest result.
-- **Lifetime survives for no state at all** (best p_adj = 0.086).
+### Reading the pattern
 
-Taken together: individual differences here are in **how often children enter these states, not
-how long they stay once there**. That is a direct, evidence-based answer to Reviewer #3's
-concern 5 ("higher fractional occupancies can be a consequence of more transitions into a
-state… or by longer life times, which is not tested") - it is now tested, and the answer is
-transitions rather than durations.
+- **Occupancy and transition-into-state agree, and they are state-specific.** States **3, 4 and
+  6** are significant on both; state **1** on occupancy; state **7** marginal on both. States 2
+  and 5 show nothing. Directions are coherent rather than scattered: the two DMN states (1
+  activation, 3 suppression) are **negative** - higher cognitive ability means less time in, and
+  fewer transitions into, DMN-dominated states - while the task-positive states (4 somatomotor,
+  6 fronto-parietal, 7 left-parietal) are **positive**.
+- **Interval survives only for state 1** (p_adj = 0.046, positive): higher-ability children take
+  *longer to return* to the rarely-visited DMN-activation state. This is consistent with its
+  negative occupancy effect and is a coherent single finding, not a broad interval effect.
+- **Lifetime survives for no state.** Best adjusted p is 0.094 (state 5).
 
-**States 3 and 6 are significant on both state-specific metrics**; states 4 and 7 are
-significant on occupancy and marginal on transitions. This convergence across
-independently-computed metrics under one correction spanning the entire paper is substantially
-more defensible than any single analysis in isolation.
+Taken together, individual differences are in **how often children enter these states, not how
+long they stay once there** - occupancy and entry frequency carry the effects, dwell time does
+not. This is a direct answer to the question of what drives the occupancy effects: transitions
+rather than durations.
 
-Recommended framing for the manuscript: **states 3, 4, 6 and 7** as the cognition-related
-states (noting 4 and 7 rest on occupancy with marginal transition support), entropy rate's
-**age** relationship as a second headline result, the *how often not how long* contrast as the
-mechanistic story, and switching rate / max FO / lifetime as supporting detail. This is a
-recommendation pending author sign-off.
+### 7.1 A correction to the parameterisation (and what it changed)
+
+An earlier pass reported the treatment-coded interaction terms from
+`fit_state_metric_model` as if they were per-state effects. They are not: with treatment
+coding, `C(state)[T.k]:cognition` is the **difference** between state k's slope and the
+reference state's, and the bare `cognition` term is the reference state's own slope. The model
+was correct; the reading of its coefficients was not.
+
+`fit_state_metric_model_simple_slopes` reparameterises to give each state's own slope. The fit
+is identical (verified: same fitted values, same residual degrees of freedom - it is a change of
+basis, not of model), but the conclusions moved in three places:
+
+| | Previous (misread) | Corrected |
+|---|---|---|
+| **State 1** | absent - hidden inside the "main effect" term | **significant** for occupancy and interval |
+| **Interval** | significant for *every* state | significant for **state 1 only**; states 2-7 null |
+| **States 2 and 5** | appeared significant for interval | null throughout - they only *differed from* state 1 |
+| **Entropy ~ cognition** | p_adj = 0.040, significant | p_adj = 0.057, **marginal** |
+
+The earlier "interval is significant everywhere, so it must be re-expressing a global switching
+effect" reasoning was chasing an artefact of the reference coding: every state differed from
+state 1 because state 1 was the only state with an interval effect.
+
+### 7.2 Open question: is the correction family right?
+
+Entropy rate's relationship with cognition sits at **p_raw = 0.0203, p_adj = 0.057** against the
+31-test family. Corrected within its own 3-test family instead, it would be **p_adj = 0.031**
+and significant. This matters because it is the paper's title claim.
+
+Both family definitions are defensible, and the choice must be made on principle rather than on
+which gives the nicer answer:
+
+- **One family of 31** (used above): maximally conservative, hardest to attack, and consistent
+  with the stated goal of correcting across everything the paper reports. Costs the entropy
+  claim its significance.
+- **Two families** - global dynamics (entropy: 3 tests) and state-specific metrics (28 tests):
+  arguably better matched to the questions asked, since the reviewers' objection was to
+  repeatedly testing the *same* question across states without correction, not to combining two
+  genuinely different questions. Recovers the entropy claim at p_adj = 0.031.
+
+**Whichever is chosen must be stated a priori in Methods and applied uniformly.** Choosing after
+seeing both is exactly the practice the original submission was criticised for. Author decision
+required - this is not a decision the analysis can make.
+
+Note that entropy rate's relationship with **age** (p_adj = 0.035) survives either way, as do
+the state-specific occupancy and transition effects.
 
 ### 7.1 Why the p-values changed from the 500-permutation run
 

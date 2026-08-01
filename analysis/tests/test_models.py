@@ -8,8 +8,10 @@ from analysis.correction import correct_pvalues
 from analysis.models import (
     fit_state_metric_model,
     fit_state_metric_model_cluster_ols,
+    fit_state_metric_model_simple_slopes,
     fit_subject_scalar_model,
     fit_transition_matrix_model,
+    state_slope_terms,
     transition_column_sums,
 )
 
@@ -98,6 +100,41 @@ def test_fit_state_metric_model_cluster_ols_runs_and_returns_diagnostics(synthet
     assert result.cov_type == "cluster"
     assert "normality" in diagnostics
     assert "vif" in diagnostics
+
+
+def test_simple_slopes_gives_one_coefficient_per_state(synthetic_state_level):
+    result, _ = fit_state_metric_model_simple_slopes(synthetic_state_level, metric="FO")
+    terms = state_slope_terms(N_STATES)
+
+    assert len(terms) == N_STATES
+    for term in terms:
+        assert term in result.params.index, f"missing per-state slope: {term}"
+
+
+def test_simple_slopes_reparameterisation_preserves_the_fit(synthetic_state_level):
+    # Reparameterising must not change the model, only the basis: identical
+    # fitted values and residuals. If this ever fails, the two functions are
+    # fitting genuinely different models and their results aren't comparable.
+    treatment, _ = fit_state_metric_model_cluster_ols(synthetic_state_level, metric="FO")
+    simple, _ = fit_state_metric_model_simple_slopes(synthetic_state_level, metric="FO")
+
+    assert np.allclose(treatment.fittedvalues, simple.fittedvalues, atol=1e-8)
+    assert treatment.df_model == simple.df_model
+
+
+def test_simple_slope_equals_reference_slope_plus_its_contrast(synthetic_state_level):
+    # State k's simple slope should equal (reference slope + difference term)
+    # from the treatment-coded fit. This is the identity that makes the
+    # earlier misreading concrete: the treatment-coded interaction alone is
+    # NOT state k's slope.
+    treatment, _ = fit_state_metric_model_cluster_ols(synthetic_state_level, metric="FO")
+    simple, _ = fit_state_metric_model_simple_slopes(synthetic_state_level, metric="FO")
+
+    reference_slope = treatment.params["center(WASI_T)"]
+    for k in range(2, N_STATES + 1):
+        expected = reference_slope + treatment.params[f"C(state)[T.{k}]:center(WASI_T)"]
+        actual = simple.params[f"C(state)[{k}]:center(WASI_T)"]
+        assert actual == pytest.approx(expected, abs=1e-8)
 
 
 def test_fit_state_metric_model_runs_and_returns_diagnostics(synthetic_state_level):

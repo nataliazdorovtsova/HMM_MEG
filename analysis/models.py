@@ -113,6 +113,55 @@ def fit_state_metric_model_cluster_ols(
     return result, diagnostics
 
 
+def fit_state_metric_model_simple_slopes(
+    df: pd.DataFrame,
+    metric: str,
+    cognition_col: str = "WASI_T",
+    state_col: str = "state",
+    subject_col: str = "subject_id",
+):
+    """Per-state cognition slopes, each estimated in its own right.
+
+    `fit_state_metric_model` uses treatment coding, so its
+    `C(state)[T.k]:cognition` terms are the DIFFERENCE between state k's
+    cognition slope and the reference state's, and the bare `cognition`
+    term is the reference state's slope. That is the right model, but the
+    wrong parameterisation for the question this paper asks, which is "does
+    occupancy of state k relate to cognitive ability?" - not "does state k
+    differ from state 1?".
+
+    On the real data the distinction changed conclusions rather than just
+    wording: mean interval showed a significant difference-from-state-1 for
+    every state, but only state 1 itself had a non-zero slope; and states 2
+    and 5 looked significant for FO as differences while having no effect
+    of their own.
+
+    Dropping the standalone cognition main effect and keeping only
+    `C(state):cognition` makes patsy emit one coefficient per state, each
+    being that state's own slope. The model fit is identical (same design
+    space, same residuals) - only the basis changes, so this is a
+    reparameterisation rather than a different model. Age is kept as
+    `center(age) + center(age):cognition` written out explicitly, because
+    the `*` shorthand would reintroduce the cognition main effect and
+    collapse the per-state terms back into contrasts.
+    """
+    fixed_rhs = (
+        f"C({state_col}) + C({state_col}):center({cognition_col})"
+        f" + center(age) + center(age):center({cognition_col}) + C(sex)"
+    )
+    formula = f"{metric} ~ {fixed_rhs}"
+    result = smf.ols(formula, df).fit(cov_type="cluster", cov_kwds={"groups": df[subject_col]})
+
+    diagnostics = {"normality": _residual_normality(result.resid.values)}
+    return result, diagnostics
+
+
+def state_slope_terms(n_states: int = 7, cognition_col: str = "WASI_T", state_col: str = "state") -> list[str]:
+    """Coefficient names for the per-state slopes from
+    `fit_state_metric_model_simple_slopes`, in state order."""
+    return [f"C({state_col})[{k}]:center({cognition_col})" for k in range(1, n_states + 1)]
+
+
 def fit_subject_scalar_model(
     df: pd.DataFrame,
     outcome: str,

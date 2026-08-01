@@ -30,7 +30,7 @@ from analysis.io import (
     load_transition_matrices,
     merged_state_level,
 )
-from analysis.models import transition_column_sums
+from analysis.models import state_slope_terms, transition_column_sums
 from analysis.permutation import (
     permutation_test_state_metric_model,
     permutation_test_subject_scalar_model,
@@ -38,10 +38,9 @@ from analysis.permutation import (
 
 FS = 250  # HMM_FinishPreprocessing.m: options.downsample = 250
 
-STATE_TERMS = [
-    "center(WASI_T)",
-    *[f"C(state)[T.{k}]:center(WASI_T)" for k in range(2, 8)],
-]
+# Each state's OWN cognition slope, not its difference from a reference
+# state - see analysis.models.fit_state_metric_model_simple_slopes.
+STATE_TERMS = state_slope_terms()
 ENTROPY_TERMS = ["center(WASI_T)", "center(age)", "center(WASI_T):center(age)"]
 
 
@@ -77,7 +76,7 @@ def main() -> None:
             warnings.simplefilter("ignore")
             res = permutation_test_state_metric_model(
                 df, metric=metric, terms=STATE_TERMS,
-                n_permutations=args.n_permutations, seed=args.seed, use_cluster_ols=True,
+                n_permutations=args.n_permutations, seed=args.seed, simple_slopes=True,
             )
         print(f"=== {label} ({args.n_permutations} permutations, {time.time() - t0:.0f}s) ===", flush=True)
         print(res.to_string(index=False), flush=True)

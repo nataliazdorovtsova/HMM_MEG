@@ -46,9 +46,9 @@ BEHAVIOURAL_COLUMNS = [
     "SDQ_conduct", "SDQ_peerproblems", "SDQ_emotion", "SDQ_prosocial",
 ]
 
-# States surviving the final multiplicity correction across FO, interval and
-# transition-into-state (see supplement section 7).
-HIGHLIGHT_STATES = [3, 4, 6, 7]
+# States whose own occupancy slope survives the final multiplicity correction
+# (see supplement section 7). States 1 and 3 are negative, 4 and 6 positive.
+HIGHLIGHT_STATES = [1, 3, 4, 6]
 
 
 def _load(export_dir: Path):

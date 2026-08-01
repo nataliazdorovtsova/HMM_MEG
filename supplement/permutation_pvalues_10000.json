@@ -1,39 +1,39 @@
 {
   "FO": {
-    "center(WASI_T)": 0.006899310068993101,
-    "C(state)[T.2]:center(WASI_T)": 0.0390960903909609,
-    "C(state)[T.3]:center(WASI_T)": 0.0168983101689831,
-    "C(state)[T.4]:center(WASI_T)": 0.006199380061993801,
-    "C(state)[T.5]:center(WASI_T)": 0.0514948505149485,
-    "C(state)[T.6]:center(WASI_T)": 0.004299570042995701,
-    "C(state)[T.7]:center(WASI_T)": 0.012398760123987601
+    "C(state)[1]:center(WASI_T)": 0.006899310068993101,
+    "C(state)[2]:center(WASI_T)": 0.2101789821017898,
+    "C(state)[3]:center(WASI_T)": 0.013298670132986702,
+    "C(state)[4]:center(WASI_T)": 0.007099290070992901,
+    "C(state)[5]:center(WASI_T)": 0.15878412158784122,
+    "C(state)[6]:center(WASI_T)": 0.0040995900409959,
+    "C(state)[7]:center(WASI_T)": 0.0184981501849815
   },
   "lifetime": {
-    "center(WASI_T)": 0.058394160583941604,
-    "C(state)[T.2]:center(WASI_T)": 0.08969103089691031,
-    "C(state)[T.3]:center(WASI_T)": 0.681031896810319,
-    "C(state)[T.4]:center(WASI_T)": 0.060993900609939006,
-    "C(state)[T.5]:center(WASI_T)": 0.08549145085491451,
-    "C(state)[T.6]:center(WASI_T)": 0.06769323067693231,
-    "C(state)[T.7]:center(WASI_T)": 0.06939306069393061
+    "C(state)[1]:center(WASI_T)": 0.058394160583941604,
+    "C(state)[2]:center(WASI_T)": 0.10238976102389762,
+    "C(state)[3]:center(WASI_T)": 0.060993900609939006,
+    "C(state)[4]:center(WASI_T)": 0.708929107089291,
+    "C(state)[5]:center(WASI_T)": 0.03949605039496051,
+    "C(state)[6]:center(WASI_T)": 0.38866113388661133,
+    "C(state)[7]:center(WASI_T)": 0.22317768223177684
   },
   "interval": {
-    "center(WASI_T)": 0.012198780121987801,
-    "C(state)[T.2]:center(WASI_T)": 0.011898810118988102,
-    "C(state)[T.3]:center(WASI_T)": 0.012698730126987301,
-    "C(state)[T.4]:center(WASI_T)": 0.0117988201179882,
-    "C(state)[T.5]:center(WASI_T)": 0.012698730126987301,
-    "C(state)[T.6]:center(WASI_T)": 0.0115988401159884,
-    "C(state)[T.7]:center(WASI_T)": 0.012198780121987801
+    "C(state)[1]:center(WASI_T)": 0.012198780121987801,
+    "C(state)[2]:center(WASI_T)": 0.7199280071992801,
+    "C(state)[3]:center(WASI_T)": 0.06259374062593741,
+    "C(state)[4]:center(WASI_T)": 0.6216378362163784,
+    "C(state)[5]:center(WASI_T)": 0.9534046595340466,
+    "C(state)[6]:center(WASI_T)": 0.47765223477652236,
+    "C(state)[7]:center(WASI_T)": 0.7756224377562244
   },
   "transition_into": {
-    "center(WASI_T)": 0.0923907609239076,
-    "C(state)[T.2]:center(WASI_T)": 0.1508849115088491,
-    "C(state)[T.3]:center(WASI_T)": 0.0023997600239976003,
-    "C(state)[T.4]:center(WASI_T)": 0.028197180281971802,
-    "C(state)[T.5]:center(WASI_T)": 0.131986801319868,
-    "C(state)[T.6]:center(WASI_T)": 0.020897910208979104,
-    "C(state)[T.7]:center(WASI_T)": 0.045795420457954206
+    "C(state)[1]:center(WASI_T)": 0.0923907609239076,
+    "C(state)[2]:center(WASI_T)": 0.27587241275872415,
+    "C(state)[3]:center(WASI_T)": 0.007899210078992101,
+    "C(state)[4]:center(WASI_T)": 0.0066993300669933005,
+    "C(state)[5]:center(WASI_T)": 0.6578342165783422,
+    "C(state)[6]:center(WASI_T)": 0.004299570042995701,
+    "C(state)[7]:center(WASI_T)": 0.029497050294970503
   },
   "entropy_rate": {
     "center(WASI_T)": 0.0202979702029797,
