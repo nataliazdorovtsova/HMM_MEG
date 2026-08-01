@@ -27,7 +27,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from analysis.models import fit_state_metric_model, fit_subject_scalar_model
+from analysis.models import (
+    fit_state_metric_model,
+    fit_state_metric_model_cluster_ols,
+    fit_subject_scalar_model,
+)
 
 
 def _permute_subject_covariate(
@@ -63,20 +67,41 @@ def permutation_test_state_metric_model(
     subject_col: str = "subject_id",
     n_permutations: int = 1000,
     seed: int = 0,
+    use_cluster_ols: bool = False,
 ) -> pd.DataFrame:
     """Permutation p-values for `terms` (coefficient names as they appear in
     the fitted model's `.params`, e.g. `C(state)[T.3]:center(WASI_T)`) from
     `fit_state_metric_model`, permuting `cognition_col` across subjects.
+
+    `use_cluster_ols=True` swaps the per-permutation refit from MixedLM to
+    `fit_state_metric_model_cluster_ols` - ~200x faster (0.03s vs 6.8s per
+    fit on the real data), which is what makes 5000+ permutations practical
+    at all. Two reasons this is a fair swap rather than a shortcut:
+
+    1. The null distribution here is built from *coefficients*, not standard
+       errors or p-values, so the robust-SE machinery that distinguishes the
+       two functions has no effect on the permutation p-value whatsoever.
+       Only the coefficient estimator matters.
+    2. MixedLM's coefficients differ from OLS's only through the GLS
+       weighting implied by a non-zero random-effect variance - and that
+       variance collapses to ~0 in every model in this project, so the two
+       estimators coincide in practice. Verified empirically before use
+       (see the supplement's high-resolution permutation section).
+
+    Do not enable this blindly on a dataset where the random-effect variance
+    is genuinely non-zero: there the two estimators would legitimately
+    differ, and the MixedLM path is the right one.
     """
     rng = np.random.default_rng(seed)
+    fit_fn = fit_state_metric_model_cluster_ols if use_cluster_ols else fit_state_metric_model
 
-    observed_result, _ = fit_state_metric_model(df, metric=metric, cognition_col=cognition_col, state_col=state_col, subject_col=subject_col)
+    observed_result, _ = fit_fn(df, metric=metric, cognition_col=cognition_col, state_col=state_col, subject_col=subject_col)
     observed = {term: observed_result.params[term] for term in terms}
 
     null_values = {term: np.empty(n_permutations) for term in terms}
     for i in range(n_permutations):
         permuted_df = _permute_subject_covariate(df, cognition_col, subject_col, rng)
-        result, _ = fit_state_metric_model(permuted_df, metric=metric, cognition_col=cognition_col, state_col=state_col, subject_col=subject_col)
+        result, _ = fit_fn(permuted_df, metric=metric, cognition_col=cognition_col, state_col=state_col, subject_col=subject_col)
         for term in terms:
             null_values[term][i] = result.params.get(term, np.nan)
 

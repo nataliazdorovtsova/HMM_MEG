@@ -42,6 +42,47 @@ def test_permutation_test_state_metric_model_shape_and_range(synthetic_state_lev
     assert result["perm_p"].between(0, 1).all()
 
 
+def test_permutation_cluster_ols_path_gives_same_p_values_as_mixedlm(synthetic_state_level):
+    # The cluster-OLS fast path is only legitimate because the two estimators
+    # produce the same coefficients when the random-effect variance is ~0
+    # (verified to ~1e-17 on the real data). Same seed => same permutations,
+    # so the resulting p-values should match too. If a future change makes
+    # the two paths diverge, this catches it.
+    terms = ["center(WASI_T)", "C(state)[T.3]:center(WASI_T)"]
+    mixed = permutation_test_state_metric_model(
+        synthetic_state_level, metric="FO", terms=terms, n_permutations=10, seed=0,
+    )
+    ols = permutation_test_state_metric_model(
+        synthetic_state_level, metric="FO", terms=terms, n_permutations=10, seed=0, use_cluster_ols=True,
+    )
+
+    merged = mixed.merge(ols, on="term", suffixes=("_mixed", "_ols"))
+    assert np.allclose(merged["observed_coef_mixed"], merged["observed_coef_ols"], atol=1e-8)
+    assert np.allclose(merged["perm_p_mixed"], merged["perm_p_ols"], atol=1e-12)
+
+
+def test_permutation_cluster_ols_path_is_faster(synthetic_state_level):
+    # Guards the actual reason the fast path exists - if MixedLM ever became
+    # as fast, or the OLS path accidentally started fitting MixedLM, the
+    # 5000-permutation runs would silently become 200x slower.
+    import time
+
+    terms = ["center(WASI_T)"]
+    t0 = time.perf_counter()
+    permutation_test_state_metric_model(
+        synthetic_state_level, metric="FO", terms=terms, n_permutations=5, seed=0,
+    )
+    mixed_elapsed = time.perf_counter() - t0
+
+    t0 = time.perf_counter()
+    permutation_test_state_metric_model(
+        synthetic_state_level, metric="FO", terms=terms, n_permutations=5, seed=0, use_cluster_ols=True,
+    )
+    ols_elapsed = time.perf_counter() - t0
+
+    assert ols_elapsed < mixed_elapsed
+
+
 def test_permutation_test_subject_scalar_model_shape_and_range(synthetic_subject_level):
     terms = ["center(WASI_T)", "center(age)"]
     result = permutation_test_subject_scalar_model(
