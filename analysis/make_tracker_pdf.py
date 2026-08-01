@@ -46,27 +46,11 @@ FIGURE_CAPTIONS = {
         "of interest. Note the direction: state 3 is negative (higher cognitive ability, less "
         "occupancy) while states 4, 6 and 7 are positive."
     ),
-    "transitions_significant_digraph.png": (
-        "State transition digraph in the style of the original manuscript figure, restricted to "
-        "what survives correction. NO individual transition cell survives BH-FDR across the 49 "
-        "(smallest adjusted p = 0.063), so an edge-wise corrected figure would be empty. What "
-        "does survive is the transitions-INTO-state test: states 3, 4 and 6 (p_adj = 0.041 "
-        "each). Arrows therefore converge on those three states, green where transitions into "
-        "the state relate positively to cognitive ability and magenta where negatively, with "
-        "self-transitions included. The arrows depict ONE tested quantity per target state - the "
-        "total probability of entering it - not seven separate tests per state."
-    ),
-    "transitions_into_state_network.png": (
-        "Transitions into each state against cognitive ability. Node colour is the correlation "
-        "between transitions into that state and cognitive ability; ringed and starred states "
-        "(3, 4, 6) are significant after correction across all 31 tests (p = 0.041). Node size "
-        "is mean fractional occupancy. Edges show the mean transition structure only and carry "
-        "no statistical claim."
-    ),
     "transition_cognition_heatmap.png": (
-        "Cell-wise correlations between each transition probability and cognitive ability, on "
-        "the same colour scale as the network figure. Descriptive only: individual cells were "
-        "not tested, since testing all 49 is the multiplicity problem this reanalysis removed."
+        "Cell-wise correlations between each transition probability and cognitive ability. "
+        "Descriptive only: NONE of these 49 cells survives multiplicity correction (smallest "
+        "adjusted p = 0.063). The significant transition result is at the level of entering a "
+        "state - states 3, 4 and 6, p_adj = 0.041 - and is reported in the results table."
     ),
     "transition_matrix_heatmap.png": (
         "Mean state transition matrix across subjects, self-transitions masked. Self-transition "
@@ -87,8 +71,6 @@ FIGURE_CAPTIONS = {
 FIGURE_ORDER = [
     "state_metric_distributions.png",
     "cognition_fo_scatters.png",
-    "transitions_significant_digraph.png",
-    "transitions_into_state_network.png",
     "transition_cognition_heatmap.png",
     "transition_matrix_heatmap.png",
     "cognitive_behavioural_correlations.png",

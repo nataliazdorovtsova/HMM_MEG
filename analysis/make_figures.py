@@ -39,10 +39,8 @@ from analysis.viz.figures import (
     cognition_scatter,
     corr_heatmap,
     state_metric_distribution,
-    significant_transition_network,
     transition_correlation_heatmap,
     transition_heatmap,
-    transition_network,
 )
 
 FS = 250  # HMM_FinishPreprocessing.m: options.downsample = 250
@@ -55,9 +53,6 @@ BEHAVIOURAL_COLUMNS = [
 # States whose own occupancy slope survives the final multiplicity correction
 # (see supplement section 7). States 1 and 3 are negative, 4 and 6 positive.
 HIGHLIGHT_STATES = [1, 3, 4, 6]
-
-# States whose transitions-into-state slope survives correction (p_adj = 0.041).
-SIGNIFICANT_TRANSITION_STATES = {3, 4, 6}
 
 STATE_LABELS = {
     1: "State 1\n(DMN+)", 2: "State 2\n(VT+)", 3: "State 3\n(DMN−)",
@@ -169,68 +164,34 @@ def _transition_cognition_data(subject_level, merged, transitions):
     return mean_matrix, node_values, node_sizes, cellwise, pvalues, limit
 
 
-def figures_transition_cognition(subject_level, merged, transitions, output_dir: Path) -> list[Path]:
-    """The two transition figures, as separate files sharing one colour scale.
+def figure_transition_cognition_heatmap(subject_level, merged, transitions, output_dir: Path) -> Path:
+    """Cell-wise correlations between each transition probability and cognitive ability.
 
-    Written separately so they can be composed into a manuscript figure
-    however you like. Both use the same diverging magenta-green scale and the
-    same symmetric limit, so the colours mean the same thing in each.
+    Descriptive only. None of these 49 cells survives multiplicity correction
+    (smallest adjusted p = 0.063), so no cell is marked significant and no
+    network/digraph version is produced: drawing arrows for individually
+    untested transitions invites reading them as findings.
 
-    The network figure deliberately differs from the original Figure 8A, which
-    drew one coloured edge per transition cell thresholded at p < 0.025
-    uncorrected - effects that paper itself reported as not surviving
-    correction. Here inference lives on the nodes; edges carry structure only.
+    The confirmatory transition result - that the total probability of
+    entering states 3, 4 and 6 relates to cognitive ability - is a
+    column-level quantity, and is reported in the results table rather than
+    drawn as per-arrow inference.
     """
-    mean_matrix, node_values, node_sizes, cellwise, pvalues, limit = _transition_cognition_data(
-        subject_level, merged, transitions
-    )
-
-    fig, ax = plt.subplots(figsize=(8.4, 7.6))
-    transition_network(mean_matrix, node_values, node_sizes,
-                       significant_states=SIGNIFICANT_TRANSITION_STATES,
-                       state_labels=STATE_LABELS, vlim=limit, ax=ax)
-    fig.tight_layout()
-    network_path = output_dir / "transitions_into_state_network.png"
-    fig.savefig(network_path, dpi=200)
-    plt.close(fig)
+    n_states = transitions["from_state"].nunique()
+    wide = transitions.pivot_table(index="subject_id", columns=["from_state", "to_state"],
+                                   values="probability")
+    cognition = subject_level.set_index("subject_id").loc[wide.index, "WASI_T"]
+    cellwise = np.array([[pearsonr(wide[(i, j)], cognition)[0]
+                          for j in range(1, n_states + 1)]
+                         for i in range(1, n_states + 1)])
 
     fig, ax = plt.subplots(figsize=(7.6, 7.2))
-    transition_correlation_heatmap(cellwise, vlim=limit, ax=ax)
+    transition_correlation_heatmap(cellwise, ax=ax)
     fig.tight_layout()
-    heatmap_path = output_dir / "transition_cognition_heatmap.png"
-    fig.savefig(heatmap_path, dpi=200)
+    path = output_dir / "transition_cognition_heatmap.png"
+    fig.savefig(path, dpi=200)
     plt.close(fig)
-
-    # Original-style digraph restricted to what survives correction.
-    #
-    # No individual transition cell survives BH-FDR across the 49 (smallest
-    # adjusted p = 0.063), so an edge-wise corrected figure would be blank.
-    # What does survive is the transitions-INTO-state test: states 3, 4 and 6
-    # (p_adj = 0.041 each). Those are edge-level claims about a whole column
-    # of the matrix, so they are drawn as every arrow converging on those
-    # states, coloured by the sign of that state's effect. The arrows depict
-    # one tested quantity per target state, not seven separate tests - the
-    # caption must say so.
-    converging_r = np.zeros_like(cellwise)
-    converging_p = np.ones_like(pvalues)
-    for state in SIGNIFICANT_TRANSITION_STATES:
-        converging_r[:, state - 1] = node_values[state]
-        converging_p[:, state - 1] = 0.0
-
-    fig, ax = plt.subplots(figsize=(8.6, 8.0))
-    significant_transition_network(
-        converging_r, converging_p, node_sizes, alpha=0.05,
-        state_labels=STATE_LABELS,
-        legend_labels=("Transitions into state relate positively to cognitive ability",
-                       "Transitions into state relate negatively to cognitive ability"),
-        ax=ax,
-    )
-    fig.tight_layout()
-    significant_path = output_dir / "transitions_significant_digraph.png"
-    fig.savefig(significant_path, dpi=200)
-    plt.close(fig)
-
-    return [network_path, heatmap_path, significant_path]
+    return path
 
 
 def figure_residual_qq(subject_level, merged, output_dir: Path) -> Path:
@@ -289,7 +250,7 @@ def main() -> None:
         figure_state_distributions(merged, output_dir),
         figure_cognition_scatters(merged, output_dir),
         figure_transition_heatmap(transitions, output_dir),
-        *figures_transition_cognition(subject_level, merged, transitions, output_dir),
+        figure_transition_cognition_heatmap(subject_level, merged, transitions, output_dir),
         figure_residual_qq(subject_level, merged, output_dir),
     ]
     for path in paths:
