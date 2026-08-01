@@ -169,14 +169,13 @@ was run directly rather than trusting either transform's parametric p-values:
 | State 7 | 0.056 | 0.016 |
 | Main cognition effect | 0.044 | 0.014 |
 
-Lifetime: only state 4 clearly stands out (consistent with the FO/rank-INT and FO/permutation
-results), others marginal. **Interval: every state shows an almost identical effect size
-(-0.146 to -0.152) and p-value** - this doesn't differentiate between states at all, which
-fits the interpretation that interval time is largely just the inverse of how often a state is
-visited overall (i.e., redundant with FO/occupancy) rather than adding state-specific
-information - a concrete instance of the exact metric-redundancy concern Reviewer #1 raised
-(general comments, and comment 6 in Results). These raw p-values still need the one
-comprehensive correction pass (§7) before being called significant or not.
+> **Superseded.** The table above is an intermediate result, retained only to document the
+> analysis history. It used 500 permutations and the treatment-coded parameterisation, whose
+> coefficients are differences from a reference state rather than per-state slopes (§7.1). The
+> apparent finding that "every state shows an almost identical interval effect" was an artefact
+> of that coding: every state differed from state 1 because state 1 was the only state with any
+> interval effect at all. **For the results that stand, see §7** - where no state shows a
+> significant interval or lifetime effect.
 
 ### 6.2 Transition-into-state (replaces the 49-cell/7-column-sum sequence)
 
@@ -278,50 +277,50 @@ slope, BH-FDR adjusted across all 31:
 
 | State | Label | FO | Transition-into | Interval | Lifetime |
 |---|---|---|---|---|---|
-| 1 | DMN+ | **0.041** (−) | ns (0.179) | *0.052* (+) | ns (0.129) |
-| 2 | VT+ | ns (0.326) | ns (0.389) | ns (0.770) | ns (0.187) |
-| 3 | DMN− | *0.052* (−) | **0.041** (−) | ns (0.129) | ns (0.129) |
-| 4 | SM+/FT− | **0.041** (+) | **0.041** (+) | ns (0.770) | ns (0.770) |
-| 5 | V+/FT− | ns (0.273) | ns (0.770) | ns (0.953) | ns (0.102) |
-| 6 | FP+/V− | **0.041** (+) | **0.041** (+) | ns (0.617) | ns (0.524) |
-| 7 | LP+/DMN− | *0.063* (+) | *0.083* (+) | ns (0.802) | ns (0.330) |
+| 1 | DMN+ | **0.041** | 0.179 | 0.052 | 0.129 |
+| 2 | VT+ | 0.326 | 0.389 | 0.770 | 0.187 |
+| 3 | DMN− | 0.052 | **0.041** | 0.129 | 0.129 |
+| 4 | SM+/FT− | **0.041** | **0.041** | 0.770 | 0.770 |
+| 5 | V+/FT− | 0.273 | 0.770 | 0.953 | 0.102 |
+| 6 | FP+/V− | **0.041** | **0.041** | 0.617 | 0.524 |
+| 7 | LP+/DMN− | 0.063 | 0.083 | 0.801 | 0.329 |
 
-Bold = significant; italic = marginal (0.05–0.09). Signs give the direction of the relationship
-with cognitive ability.
+Bold = significant at p < 0.05. Every adjusted p-value is shown, so that significant and
+non-significant cells are presented on the same footing.
 
 Subject-level effects:
 
-| Effect | p_raw | p_adjusted | |
+| Effect | p_raw | p_adjusted | Significant |
 |---|---|---|---|
-| Entropy rate ~ **cognition** | 0.0203 | 0.063 | *marginal* |
-| Entropy rate ~ age | 0.1675 | 0.273 | ns |
-| Entropy rate ~ age × cognition | 0.6995 | 0.770 | ns |
+| Entropy rate ~ cognition | 0.0203 | 0.063 | No |
+| Entropy rate ~ age | 0.1675 | 0.273 | No |
+| Entropy rate ~ age × cognition | 0.6995 | 0.770 | No |
 
 ### Reading the pattern
 
-- **States 4 (somatomotor) and 6 (fronto-parietal) are the robust findings**: significant on
-  *both* occupancy and transitions-into-state, both **positive**.
-- **State 3 (DMN suppression)** is significant on transitions (0.041) and marginal on occupancy
-  (0.052); **state 1 (DMN activation)** is the mirror - significant on occupancy (0.041),
-  marginal on interval (0.052). Both **negative**.
-- The direction pattern is coherent rather than scattered: **both DMN-dominated states are
-  negative** (higher cognitive ability → less time in, fewer transitions into them) and **both
-  task-positive states are positive**. State 7 (left-parietal / DMN−) trends positive but does
-  not clear correction on either metric (0.063, 0.083).
-- **States 2 and 5 show nothing on any metric.**
-- **Lifetime survives for no state** (best 0.102), and **interval for none** (state 1 nearest at
-  0.052).
+Significant effects, with direction:
 
-Taken together, individual differences are in **how often children enter these states, not how
-long they stay once there** - occupancy and entry frequency carry what signal there is; dwell
-time carries none.
+- **State 4 (somatomotor)** and **state 6 (fronto-parietal)**: occupancy and transitions-into
+  both **positive** (p_adj = 0.041 on all four terms).
+- **State 1 (DMN activation)**: occupancy **negative** (0.041).
+- **State 3 (DMN suppression)**: transitions-into **negative** (0.041).
 
-**Honest caveat on robustness.** Many adjusted p-values sit in a narrow band around 0.04–0.06,
-so which terms fall either side of 0.05 is sensitive to the exact composition of the correction
-family. The claim that survives that sensitivity is the *pattern* - two task-positive states
-positive, two DMN states negative, on occupancy and entry frequency but not dwell time - rather
-than the significance of any individual cell. The manuscript should be written to that level of
-confidence.
+Null results:
+
+- **No state shows a lifetime or interval effect.** The smallest adjusted p is 0.052 (state 1
+  interval); none reaches significance.
+- **States 2 and 5 show no effect on any metric.**
+- **State 7 does not reach significance on any metric** (smallest 0.063).
+- **Entropy rate is not significantly related to cognitive ability or to age** after correction.
+
+Taken together, the significant differences are in **how often children enter these states, not
+how long they stay once there**: occupancy and entry frequency carry the effects, dwell time
+carries none.
+
+**Robustness.** Several adjusted p-values fall close to 0.05 on either side, so which individual
+terms cross the threshold is sensitive to the exact composition of the correction family. The
+manuscript should be written accordingly - the significant results above are the claims, and
+they should not be over-interpreted as a precise ranking.
 
 ### 7.1 A correction to the parameterisation (and what it changed)
 
@@ -337,10 +336,10 @@ basis, not of model), but the conclusions moved in three places:
 
 | | Previous (misread) | Corrected |
 |---|---|---|
-| **State 1** | absent - hidden inside the "main effect" term | **significant** for occupancy and interval |
-| **Interval** | significant for *every* state | significant for **state 1 only**; states 2-7 null |
+| **State 1** | absent - hidden inside the "main effect" term | **significant** for occupancy |
+| **Interval** | significant for *every* state | **no state significant** |
 | **States 2 and 5** | appeared significant for interval | null throughout - they only *differed from* state 1 |
-| **Entropy ~ cognition** | p_adj = 0.040, significant | p_adj = 0.057, **marginal** |
+| **Entropy ~ cognition** | p_adj = 0.040, significant | p_adj = 0.063, **not significant** |
 
 The earlier "interval is significant everywhere, so it must be re-expressing a global switching
 effect" reasoning was chasing an artefact of the reference coding: every state differed from
@@ -357,28 +356,25 @@ would determine whether the paper's title claim survived. With the age-permutati
 | All 31 tests together | p_adj = **0.063** |
 | Entropy as its own 3-test family | p_adj = **0.061** |
 
-Marginal either way, and comfortably outside 0.05 on both. The choice of family no longer
-changes any conclusion, so it can be stated a priori in Methods on principle alone (we recommend
-the single 31-test family, as the more conservative and simpler to describe) without that choice
-carrying the title.
+Not significant either way. The choice of family no longer changes any conclusion, so it can be
+stated a priori in Methods on principle alone (we recommend the single 31-test family, as the
+more conservative and simpler to describe) without that choice affecting what the paper claims.
 
 **Implication for the manuscript.** The title claim - "the entropy of resting-state neural
-dynamics is a marker of general cognitive ability" - rests on p_raw = 0.020, p_adj ≈ 0.06.
-Uncorrected it is a real effect; corrected for everything else the paper reports, it is
-marginal. The state-specific occupancy and transition findings are the stronger results and are
-the better basis for the paper's headline. This is an authorial judgement, but the numbers
-support reframing rather than retaining the current title as-is.
+dynamics is a marker of general cognitive ability" - rests on p_raw = 0.020, p_adj = 0.063.
+**It does not survive correction for the other tests the paper reports.** The significant
+findings are the state-specific occupancy and transition results, and they are the appropriate
+basis for the paper's headline. This is an authorial judgement, but the numbers do not support
+retaining the current title.
 
 ### 7.1 Why the p-values changed from the 500-permutation run
 
 The earlier pass used 500 permutations, which bounds resolution at 1/501 ≈ 0.002 and leaves
 real Monte-Carlo noise on every estimate. All headline tests were re-run at **10,000
 permutations** (feasible because of the verified cluster-OLS fast path - see
-`analysis/permutation.py`). Conclusions are stable for FO, interval and lifetime; the
-meaningful change is in **transition-into-state**, where states 4 and 7 moved from significant
-to marginal (0.051, 0.075). The earlier figures for that metric came from a *parametric*
-cluster-OLS fit rather than a permutation test, so this is a like-for-like improvement, not an
-instability in the result. Reporting the 10,000-permutation values throughout.
+`analysis/permutation.py`). The 10,000-permutation values are reported throughout; the
+500-permutation figures appearing earlier in this document are superseded and are retained only
+to document the analysis history.
 
 ## 7.3 Full audit of the analysis
 
