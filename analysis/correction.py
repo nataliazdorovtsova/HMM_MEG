@@ -40,7 +40,8 @@ def correct_pvalues(pvalues: dict[str, float], method: str = "fdr_bh", alpha: fl
     if dropped:
         warnings.warn(
             f"Excluding {len(dropped)} term(s) with a NaN p-value from multiplicity "
-            f"correction (not real hypothesis tests, e.g. a variance component): {dropped}"
+            f"correction (not real hypothesis tests, e.g. a variance component): {dropped}",
+            stacklevel=2,
         )
     if not valid:
         raise ValueError("All p-values were NaN - nothing to correct")

@@ -1,6 +1,6 @@
 """Loaders for the MATLAB -> Python data contract.
 
-Three tidy files are produced by ``HMM_ExportForPython.m``:
+Three tidy files are produced by ``matlab/HMM_ExportForPython.m``:
 
 - ``subject_level.csv``: one row per subject (demographics, cognition,
   behaviour, and the subject-level HMM scalars: switching rate, entropy

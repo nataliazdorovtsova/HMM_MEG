@@ -1,22 +1,29 @@
-"""Mixed-effects model specifications replacing the per-state/per-metric GLMs.
+"""Model specifications for the HMM state metrics.
 
-Design, per the agreed redesign:
+Replaces the original mass-univariate approach - one GLM per state per
+metric, each corrected only within its own small family - with one model
+per metric, `state` as a within-subject factor.
 
-- Per-state metrics (FO, lifetime, interval) are modelled with ONE mixed
-  model each, `state` as a within-subject categorical fixed effect and
-  `subject_id` as a random intercept, instead of one separate GLM per
-  state. `age` and `cognition` are both included as an interaction term
-  (effects of interest, not covariates-only), alongside `sex`.
-- Subject-level scalars (switching rate, entropy rate) are modelled with
-  ordinary least squares, since there is no repeated-measures structure
-  to account for. Given switching rate and entropy rate correlate at
-  r ~ 0.998 (see HMM_Entropy.m), only one of them should be treated as
-  the primary outcome per family in `correction.py` — see the plan notes
-  in the repo root about which is primary vs. robustness-check.
+Three parameterisations of the same model are provided, and the difference
+between them mattered on the real data:
 
-Every fit function returns the fitted statsmodels result *and* a
-diagnostics dict (residual normality, VIF), so diagnostics are never an
-afterthought bolted on after the fact.
+- `fit_state_metric_model` - mixed model with a subject random intercept.
+- `fit_state_metric_model_cluster_ols` - OLS with subject-clustered robust
+  standard errors. Used where the mixed model failed to converge; its
+  random-effect variance came out at ~0 in every model here, so the two
+  give identical coefficients.
+- `fit_state_metric_model_simple_slopes` - **the one the paper reports**.
+  The first two use treatment coding, whose interaction terms are each
+  state's difference from a reference state rather than its own slope.
+
+Subject-level scalars (entropy rate, switching rate) use
+`fit_subject_scalar_model`. Switching rate correlates with entropy rate at
+r = 0.998, so only entropy rate enters the correction family; switching
+rate is reported as a consistency check.
+
+Every fit returns the statsmodels result *and* a diagnostics dict
+(residual normality, and VIF where the design supports it), so diagnostics
+are produced as a matter of course rather than on request.
 """
 
 from __future__ import annotations
@@ -184,39 +191,6 @@ def fit_subject_scalar_model(
         "vif": _vif(df, fixed_rhs),
     }
     return result, diagnostics
-
-
-def fit_transition_matrix_model(transitions_long: pd.DataFrame, subject_level: pd.DataFrame,
-                                  cognition_col: str = "WASI_T"):
-    """Single, planned model for whether cognition relates to the probability of
-    transitioning INTO each state, replacing the 49-cell-then-7-column-sum
-    sequence in HMM_Entropy.m (49 cell-wise correlations found nothing, so the
-    7 column-sum correlations were tried as an unplanned second attempt - the
-    exact "moved the goalposts after the first test failed" problem Reviewer #3
-    flagged, concern 5).
-
-    An earlier version of this function fit the full K x K x cognition
-    three-way interaction (49 cells) as fixed effects. On the real data (46
-    subjects) that raised `LinAlgError: Singular matrix` - over-parameterized,
-    not just slow to converge. Rather than patch around that, this collapses
-    each subject's transition matrix to its column sums (total probability of
-    transitioning into each state, summed over the state transitioned from)
-    BEFORE fitting - which is what the column-sum analysis was actually asking
-    in the first place. That makes it structurally identical to
-    `fit_state_metric_model` (7 states x 46 subjects).
-
-    Uses `fit_state_metric_model_cluster_ols` rather than the MixedLM version:
-    on the real data the mixed model ran but failed to converge, and its
-    random-effect variance collapsed to ~0 (the same pattern seen in the
-    FO/lifetime/interval mixed models) - cluster-robust OLS gives the same
-    subject-level correlation adjustment without the convergence problem.
-
-    `transitions_long` must have columns subject_id, from_state, to_state,
-    probability (as produced by analysis.io.load_transition_matrices).
-    """
-    column_sums = transition_column_sums(transitions_long)
-    df = column_sums.merge(subject_level, on="subject_id", how="left")
-    return fit_state_metric_model_cluster_ols(df, metric="transition_into_sum", cognition_col=cognition_col)
 
 
 def transition_column_sums(transitions_long: pd.DataFrame) -> pd.DataFrame:

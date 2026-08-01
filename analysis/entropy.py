@@ -1,6 +1,6 @@
 """Entropy-rate calculations over HMM state transition matrices.
 
-This is a direct port of the math in ``HMM_Entropy.m`` (stationary
+This is a direct port of the math in ``matlab/legacy/HMM_Entropy.m`` (stationary
 distribution -> entropy rate), which is plain linear algebra over an
 already-computed transition matrix and does not depend on any HMM-MAR
 toolbox call. It exists here so the entropy rate reported in
@@ -21,7 +21,7 @@ def stationary_distribution(P: np.ndarray) -> np.ndarray:
 
     Solves mu @ P = mu, i.e. mu is a left eigenvector of P with eigenvalue 1,
     equivalently a right null-space vector of (P.T - I). Mirrors MATLAB's
-    ``null(P' - eye(n))`` followed by normalisation in HMM_Entropy.m.
+    ``null(P' - eye(n))`` followed by normalisation in matlab/legacy/HMM_Entropy.m.
     """
     P = np.asarray(P, dtype=float)
     n = P.shape[0]
@@ -59,7 +59,7 @@ def entropy_rate(P: np.ndarray, mu: np.ndarray | None = None, fs: float | None =
 def entropy_rate_by_subject(transitions: pd.DataFrame, fs: float | None = 4.0) -> pd.DataFrame:
     """Compute entropy rate (and stationary distribution) for every subject.
 
-    ``fs`` defaults to 4 to match HMM_Entropy.m's nats/second conversion;
+    ``fs`` defaults to 4 to match matlab/legacy/HMM_Entropy.m's nats/second conversion;
     pass ``None`` to get nats per unit time instead.
     """
     rows = []

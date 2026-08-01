@@ -13,7 +13,6 @@ from analysis.viz.figures import (
     state_metric_distribution,
     transition_correlation_heatmap,
     transition_heatmap,
-    transition_network,
 )
 
 
@@ -60,7 +59,7 @@ def test_state_metric_distribution_runs_with_and_without_log_scale(synthetic_sta
     assert ax_linear.get_yscale() == "linear"
 
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax_log = state_metric_distribution(synthetic_state_df, metric="metric", log_scale=True, ax=ax)
     assert ax_log.get_yscale() == "log"
 
@@ -100,39 +99,7 @@ def test_transition_heatmap_can_show_diagonal():
     assert "masked" not in colorbar_ax.get_ylabel()
 
 
-def _transition_fixture(n_states=7, seed=0):
-    rng = np.random.default_rng(seed)
-    matrix = rng.dirichlet(np.ones(n_states), size=n_states)
-    np.fill_diagonal(matrix, 0.95)
-    node_values = {k: rng.uniform(-0.4, 0.4) for k in range(1, n_states + 1)}
-    node_sizes = {k: rng.uniform(0.02, 0.25) for k in range(1, n_states + 1)}
-    return matrix, node_values, node_sizes
 
-
-def test_transition_network_runs_and_marks_significant_states():
-    matrix, node_values, node_sizes = _transition_fixture()
-
-    ax = transition_network(matrix, node_values, node_sizes, significant_states={3, 4, 6})
-
-    # significant states get a heavier ring than the rest; check both widths present
-    linewidths = {round(float(np.ravel(c.get_linewidths())[0]), 2)
-                  for c in ax.collections if len(np.ravel(c.get_linewidths()))}
-    assert len(linewidths) >= 2, "significant and non-significant nodes should differ visibly"
-    starred = [t.get_text() for t in ax.texts if t.get_text().endswith("*")]
-    assert len(starred) == 3
-
-
-def test_transition_network_circular_layout_has_no_overlapping_nodes():
-    matrix, node_values, node_sizes = _transition_fixture()
-
-    ax = transition_network(matrix, node_values, node_sizes, layout="circular")
-
-    points = np.vstack([c.get_offsets() for c in ax.collections if len(c.get_offsets()) == 1])
-    distances = [
-        np.linalg.norm(points[i] - points[j])
-        for i in range(len(points)) for j in range(i + 1, len(points))
-    ]
-    assert min(distances) > 0.5, "circular layout should keep nodes well separated"
 
 
 def test_transition_correlation_heatmap_is_symmetric_about_zero():
@@ -146,34 +113,4 @@ def test_transition_correlation_heatmap_is_symmetric_about_zero():
     assert mesh.norm.vmin == pytest.approx(-mesh.norm.vmax)
 
 
-def test_significant_transition_network_draws_only_significant_edges():
-    from analysis.viz.figures import significant_transition_network
 
-    n = 7
-    r = np.zeros((n, n))
-    p = np.ones((n, n))
-    # three significant edges: two positive, one negative, one of them a self-loop
-    r[0, 1], p[0, 1] = 0.4, 0.01
-    r[2, 3], p[2, 3] = -0.4, 0.02
-    r[4, 4], p[4, 4] = 0.5, 0.001
-    sizes = {k: 0.1 for k in range(1, n + 1)}
-
-    ax = significant_transition_network(r, p, sizes, alpha=0.05)
-
-    from matplotlib.patches import Arc, FancyArrowPatch
-    arrows = [pt for pt in ax.patches if isinstance(pt, FancyArrowPatch)]
-    arcs = [pt for pt in ax.patches if isinstance(pt, Arc)]
-    assert len(arrows) == 2, "only the two significant off-diagonal edges should be drawn"
-    assert len(arcs) == 1, "the significant self-transition should be drawn as a loop"
-
-
-def test_significant_transition_network_legend_states_uncorrected():
-    from analysis.viz.figures import significant_transition_network
-
-    n = 7
-    r = np.zeros((n, n)); p = np.ones((n, n))
-    r[0, 1], p[0, 1] = 0.4, 0.01
-    ax = significant_transition_network(r, p, {k: 0.1 for k in range(1, n + 1)})
-
-    legend_text = " ".join(t.get_text() for t in ax.get_legend().get_texts())
-    assert "uncorrected" in legend_text, "the threshold must be disclosed as uncorrected"

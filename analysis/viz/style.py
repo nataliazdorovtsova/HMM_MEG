@@ -45,14 +45,6 @@ DIVERGING_CMAP = "RdBu_r"
 # legitimate diverging pair rather than a purely aesthetic choice.
 DIVERGING_CMAP_PIYG = "PiYG"
 
-# The two poles of PiYG, used as solid categorical colours where an edge is
-# simply positive or negative rather than carrying a magnitude.
-PIYG_NEGATIVE = "#c51b7d"  # magenta
-PIYG_POSITIVE = "#4d9221"  # green
-
-# Node fill for the transition network, matching the original manuscript figure.
-NODE_YELLOW = "#f0b429"
-
 TEXT_PRIMARY = "#0b0b0b"
 TEXT_SECONDARY = "#52514e"
 TEXT_MUTED = "#898781"

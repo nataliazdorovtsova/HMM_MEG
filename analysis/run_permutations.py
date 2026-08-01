@@ -36,7 +36,7 @@ from analysis.permutation import (
     permutation_test_subject_scalar_model,
 )
 
-FS = 250  # HMM_FinishPreprocessing.m: options.downsample = 250
+FS = 250  # matlab/preprocessing/HMM_FinishPreprocessing.m: options.downsample = 250
 
 # Each state's OWN cognition slope, not its difference from a reference
 # state - see analysis.models.fit_state_metric_model_simple_slopes.

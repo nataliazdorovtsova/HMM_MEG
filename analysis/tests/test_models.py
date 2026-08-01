@@ -10,7 +10,6 @@ from analysis.models import (
     fit_state_metric_model_cluster_ols,
     fit_state_metric_model_simple_slopes,
     fit_subject_scalar_model,
-    fit_transition_matrix_model,
     state_slope_terms,
     transition_column_sums,
 )
@@ -68,18 +67,6 @@ def synthetic_transitions(synthetic_subject_level):
                 })
     return pd.DataFrame(rows)
 
-
-def test_fit_transition_matrix_model_runs_on_46x49_scale_data(synthetic_transitions, synthetic_subject_level):
-    # Regression test: an earlier version of this function fit the full
-    # K x K x cognition three-way interaction directly on the 49-cell data,
-    # which raised LinAlgError: Singular matrix on the real 46-subject
-    # dataset (over-parameterized). This checks the column-sum reduction
-    # actually avoids that failure mode.
-    result, diagnostics = fit_transition_matrix_model(synthetic_transitions, synthetic_subject_level)
-
-    assert result.params is not None
-    assert "normality" in diagnostics
-    assert "vif" in diagnostics
 
 
 def test_transition_column_sums_matches_hand_computed_expectation(synthetic_transitions):
@@ -190,7 +177,7 @@ def test_correct_pvalues_excludes_nan_terms_instead_of_poisoning_whole_result():
     assert real_terms["p_adjusted"].notna().all()
     dropped_row = corrected[corrected["term"] == "FO_Group_Var"].iloc[0]
     assert math.isnan(dropped_row["p_adjusted"])
-    assert dropped_row["significant"] == False  # noqa: E712 (numpy/pandas bool, not `is False`)
+    assert not dropped_row["significant"]
 
 
 def test_correct_pvalues_all_nan_raises():
