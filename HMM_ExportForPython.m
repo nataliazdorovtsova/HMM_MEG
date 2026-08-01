@@ -48,15 +48,13 @@ FO            = csvread('FO.csv'); % nsub x nstates
 
 nstates = size(FO,2);
 
-intervals = load('Intervals_k7_3.mat');
-    intervals = intervals.Intervals; % 1 x nstates cell array of per-event values, concatenated across subjects
-lifetimes = load('LifeTimes_k7_3.mat');
-    lifetimes = lifetimes.LifeTimes;
-
-T = csvread('T_46.csv'); % number of timepoints per subject, used to segment Xi below
+T = csvread('T_46.csv'); % number of timepoints per subject, used to segment Xi/vpath below
 
 Xi = load('Xi_k7_clean3.mat');
     Xi = Xi.Xi;
+
+vpath = load('viterbipath_k7_clean3.mat');
+    vpath = vpath.vpath; % Viterbi state path, one entry per timepoint, concatenated across subjects
 
 %% subject_level.csv
 
@@ -82,19 +80,46 @@ for s = 1:nstates
     end
 end
 
-% Per-subject mean lifetime/interval for each state. Individual event-level
-% values (intervals{s}, lifetimes{s}) are concatenated across all subjects
-% without a subject index in the current upstream scripts, so only the
-% per-subject mean is exported here; if per-event distributions are wanted
-% for Figure 4-style plots, the upstream scripts need to track subject
-% membership per event before this export can include them.
+% Per-subject, per-state mean lifetime/interval, derived fresh from the
+% Viterbi path rather than from Intervals_k7_3.mat/LifeTimes_k7_3.mat -
+% those only ever stored per-state vectors concatenated across all subjects
+% with no subject index, so a genuine per-subject mean was not recoverable
+% from them. vpath (segmented by T, same pattern as the Xi segmentation
+% below) has everything needed: a "lifetime" is the length of one
+% continuous run in a state; an "interval" is the gap between the end of
+% one run and the start of the next run in that same state. No minimum-
+% duration threshold is applied here (the original ~50ms exclusion was
+% flagged by Reviewer #3 as unmotivated) - compare with/without one if
+% needed once real numbers are in hand.
+vpath_by_subject = cell(nsub,1);
+time_passed = 1;
+for x = 1:nsub
+    vpath_by_subject{x} = vpath(time_passed : time_passed + T(x) - 1);
+    time_passed = time_passed + T(x);
+end
+
 lifetime_mean = nan(nsub,nstates);
 interval_mean = nan(nsub,nstates);
-% NOTE: the current intervals{s}/lifetimes{s} arrays are concatenated
-% across subjects without subject boundaries recorded; the means below are
-% therefore only meaningful once the upstream computation is amended to
-% keep per-subject event lists (see analysis/io.py docstring for the
-% expected shape once that's fixed).
+
+for x = 1:nsub
+    path = vpath_by_subject{x};
+    for s = 1:nstates
+        in_state = (path == s);
+        d = diff([0; in_state(:); 0]);
+        run_starts = find(d == 1);
+        run_ends = find(d == -1) - 1;
+
+        if ~isempty(run_starts)
+            lifetime_mean(x,s) = mean(run_ends - run_starts + 1); % in samples
+        end
+        if numel(run_starts) > 1
+            interval_mean(x,s) = mean(run_starts(2:end) - run_ends(1:end-1) - 1); % in samples
+        end
+        % Both stay NaN if subject x never visits state s at all - a
+        % genuine missing value (see Reviewer #3 concern 2c), not a
+        % fabricated zero.
+    end
+end
 
 state_level.lifetime_mean = reshape(lifetime_mean, [], 1);
 state_level.interval_mean = reshape(interval_mean, [], 1);

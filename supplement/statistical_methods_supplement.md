@@ -5,8 +5,10 @@ behind each decision - written so the choices are justifiable to reviewers, not 
 Numbers here come from the real exported dataset (46 subjects, K=7 HMM states), generated via
 `HMM_ExportForPython.m` and analysed with the `analysis/` Python package in this repo.
 
-**Status: in progress.** Sections below are complete as analyses finish; the final
-recommendation (§5) is not yet written pending the permutation results in §4.
+**Status:** lifetime/interval metric definition decided (§5). Statistical method for the
+headline state x cognition finding (§4) has a recommendation (permutation-based results,
+states 3/4/6/7) awaiting final author sign-off before it's treated as settled for the
+manuscript.
 
 ## 1. Motivation
 
@@ -84,12 +86,14 @@ The critical question, given the diagnostics above: which HMM states show a cogn
 relationship, and does that answer depend on which of the three defensible analysis choices
 we make?
 
-| State x cognition term | Raw FO (parametric, FDR-corrected) | Rank-INT FO (parametric, FDR-corrected) | Permutation (raw FO, subject-level covariate permutation) |
+| State x cognition term | Raw FO (parametric, FDR-corrected) | Rank-INT FO (parametric, FDR-corrected) | Permutation (raw FO, subject-level covariate permutation, 500 perms, FDR-corrected) |
 |---|---|---|---|
-| State 3 | **significant**, p_adj = 0.0017 | not significant, p_adj = 0.12 | *pending* |
-| State 4 | not significant | **significant**, p_adj = 0.0016 | *pending* |
-| State 6 | not significant | **significant**, p_adj = 0.0010 | *pending* |
-| State 7 | not significant | **significant**, p_adj = 0.0065 | *pending* |
+| State 2 | not significant | not significant | not significant, p_adj = 0.062 |
+| State 3 | **significant**, p_adj = 0.0017 | not significant, p_adj = 0.12 | **significant**, p_adj = 0.037 |
+| State 4 | not significant | **significant**, p_adj = 0.0016 | **significant**, p_adj = 0.024 |
+| State 5 | not significant | not significant | not significant, p_adj = 0.069 |
+| State 6 | not significant | **significant**, p_adj = 0.0010 | **significant**, p_adj = 0.020 |
+| State 7 | not significant | **significant**, p_adj = 0.0065 | **significant**, p_adj = 0.024 |
 
 **This is not a minor detail.** The choice between raw and rank-transformed FO changes which
 states the paper's central claim is about - state 3 alone vs. states 4/6/7. Notably, states 4
@@ -104,8 +108,16 @@ The permutation test (`analysis/permutation.py`) is the tie-breaker: it tests th
 untransformed FO model but replaces the parametric Wald p-value with an empirical null built
 by permuting each subject's cognition score across subjects 500 times and refitting, which
 sidesteps the normality question entirely rather than resolving it via transformation.
-*Results pending - being run now against real data (500 permutations, mixed model, ~30 min
-compute).*
+
+**Result: the permutation test recovers state 3 (found only by the raw model) AND states
+4/6/7 (found only by rank-INT), all four surviving the same FDR correction** (p_adj 0.020-
+0.037). States 2 and 5 come close but don't clear it (p_adj 0.062, 0.069). Rather than one
+parametric approach being "right," each looks to have been underpowered for part of the true
+signal in a different way - state 3's effect is apparently sensitive to the severe FO
+skew that only rank-INT fixes, while states 4/6/7's effects were presumably attenuated by
+that same skew in the raw model. The permutation result, being assumption-free, is the most
+complete picture we have and is the recommended basis for the manuscript's reported states -
+**pending final author sign-off**, since this determines the paper's central claim.
 
 Permutation caveat (stated plainly): this is a simple covariate-permutation test, not a full
 Freedman-Lane permutation of nuisance-adjusted residuals - it assumes subjects are
@@ -113,11 +125,36 @@ exchangeable with respect to age/sex as well as cognition. Treat as the standard
 used approach in this literature; a full Freedman-Lane implementation would be a further
 refinement if reviewers push back on this point specifically.
 
-## 5. Final decision and justification
+## 5. Lifetime/interval metrics: original method unrecoverable, replacement decided
 
-*Pending §4 results.*
+**Decided**: raw Viterbi-path run-length encoding, no minimum-duration threshold. Implemented
+in `HMM_ExportForPython.m`, already reflected in the real `state_level.csv` export.
 
-## 6. Reproducibility
+Investigation: `Intervals_k7_3.mat`/`LifeTimes_k7_3.mat` (and their flattened
+`IntervalsFull.csv`/`LifetimesFull.csv` exports) store only per-state vectors concatenated
+across all subjects with no subject index - the per-subject values needed for the mixed-model
+redesign are not recoverable from them, and the script that originally produced them is not
+present in this repo. Two independent attempts to reproduce their values instead - (1) raw
+Viterbi-path run-length encoding, (2) the real `getStateLifeTimes`/`getStateIntervalTimes`
+HMM-MAR functions on the true `Gamma`, both with and without a 12-sample (~50ms) threshold -
+all produced 10-100x more, much shorter events than the old export (e.g. state 4: our
+count 90k-94k events, old count 732; our mean 11-20 samples, old mean 59.75). The gap is far
+too large to be the stated 50ms exclusion alone, and chasing a larger threshold purely to
+match an undocumented old number would mean adopting the exact kind of unmotivated parameter
+Reviewer #3 already flagged (concern 2c).
+
+Decision: rather than reverse-engineer an unknown original method, adopt the simplest fully
+transparent definition - raw Viterbi-path run-length encoding, no threshold - and disclose
+this reasoning directly if asked. A genuine missing value (`NaN`) is recorded when a subject
+never visits a state at all, rather than a fabricated zero, which also directly answers
+Reviewer #3's question about whether some subjects never visit certain states.
+
+## 6. Final decision and justification
+
+*Statistical method (§4): permutation-based results recommended as primary, pending final
+author confirmation. Lifetime/interval definition (§5): decided.*
+
+## 7. Reproducibility
 
 - Code: `analysis/` package, this repo (`HMM_MEG`)
 - Data: exported via `HMM_ExportForPython.m` from `hmm_k7_clean3.mat` / `Gamma_k7_clean3.mat` /
