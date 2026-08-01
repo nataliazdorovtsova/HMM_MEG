@@ -47,11 +47,14 @@ FIGURE_CAPTIONS = {
         "occupancy) while states 4, 6 and 7 are positive."
     ),
     "transitions_significant_digraph.png": (
-        "State transition digraph in the style of the original manuscript figure. One arrow per "
-        "transition whose correlation with cognitive ability reaches p < 0.05 UNCORRECTED "
-        "(18 of 49), green positive and magenta negative, including self-transitions for states "
-        "3, 4 and 6. Descriptive: these cell-wise tests are not corrected for multiplicity, and "
-        "the confirmatory analysis is over transitions into each state, not individual cells."
+        "State transition digraph in the style of the original manuscript figure, restricted to "
+        "what survives correction. NO individual transition cell survives BH-FDR across the 49 "
+        "(smallest adjusted p = 0.063), so an edge-wise corrected figure would be empty. What "
+        "does survive is the transitions-INTO-state test: states 3, 4 and 6 (p_adj = 0.041 "
+        "each). Arrows therefore converge on those three states, green where transitions into "
+        "the state relate positively to cognitive ability and magenta where negatively, with "
+        "self-transitions included. The arrows depict ONE tested quantity per target state - the "
+        "total probability of entering it - not seven separate tests per state."
     ),
     "transitions_into_state_network.png": (
         "Transitions into each state against cognitive ability. Node colour is the correlation "

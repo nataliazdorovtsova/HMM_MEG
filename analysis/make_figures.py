@@ -201,12 +201,30 @@ def figures_transition_cognition(subject_level, merged, transitions, output_dir:
     fig.savefig(heatmap_path, dpi=200)
     plt.close(fig)
 
-    # Original-style digraph: yellow nodes, one flat magenta/green arrow per
-    # transition significant at uncorrected p < 0.05, self-loops included.
-    # Descriptive - the legend states the threshold and that it is uncorrected.
+    # Original-style digraph restricted to what survives correction.
+    #
+    # No individual transition cell survives BH-FDR across the 49 (smallest
+    # adjusted p = 0.063), so an edge-wise corrected figure would be blank.
+    # What does survive is the transitions-INTO-state test: states 3, 4 and 6
+    # (p_adj = 0.041 each). Those are edge-level claims about a whole column
+    # of the matrix, so they are drawn as every arrow converging on those
+    # states, coloured by the sign of that state's effect. The arrows depict
+    # one tested quantity per target state, not seven separate tests - the
+    # caption must say so.
+    converging_r = np.zeros_like(cellwise)
+    converging_p = np.ones_like(pvalues)
+    for state in SIGNIFICANT_TRANSITION_STATES:
+        converging_r[:, state - 1] = node_values[state]
+        converging_p[:, state - 1] = 0.0
+
     fig, ax = plt.subplots(figsize=(8.6, 8.0))
-    significant_transition_network(cellwise, pvalues, node_sizes, alpha=0.05,
-                                   state_labels=STATE_LABELS, ax=ax)
+    significant_transition_network(
+        converging_r, converging_p, node_sizes, alpha=0.05,
+        state_labels=STATE_LABELS,
+        legend_labels=("Transitions into state relate positively to cognitive ability",
+                       "Transitions into state relate negatively to cognitive ability"),
+        ax=ax,
+    )
     fig.tight_layout()
     significant_path = output_dir / "transitions_significant_digraph.png"
     fig.savefig(significant_path, dpi=200)

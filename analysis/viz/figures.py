@@ -315,6 +315,7 @@ def significant_transition_network(
     node_sizes: dict[int, float],
     alpha: float = 0.05,
     state_labels: dict[int, str] | None = None,
+    legend_labels: tuple[str, str] | None = None,
     layout: str = "circular",
     seed: int = 7,
     ax=None,
@@ -376,39 +377,40 @@ def significant_transition_network(
             )
 
     # Self-loops need explicit geometry: an arrow from a point to itself has
-    # zero length and renders nothing. Each loop is an arc sitting just
-    # outside its node, on the far side from the centre so it never covers a
-    # label or another edge. Node radii are read back through the data
-    # transform so the loops stay attached at any figure size.
-    ax.set_xlim(-1.85, 1.85)
-    ax.set_ylim(-1.75, 1.75)
-    points_per_data_unit = abs(
-        ax.transData.transform((1.0, 0.0))[0] - ax.transData.transform((0.0, 0.0))[0]
-    )
+    # zero length and renders nothing.
+    #
+    # Their size is set in DATA units, not derived from the marker size in
+    # points. The points-per-data ratio is not knowable here - `tight_layout`
+    # resizes the axes after this function returns - so a radius computed from
+    # the transform comes out too small and the arc gets drawn across its own
+    # node. The layout is always a unit circle at a fixed aspect, so
+    # data-space constants are stable across figure sizes.
+    ax.set_xlim(-1.9, 1.9)
+    ax.set_ylim(-1.8, 1.8)
+    node_radius_data = {s: 0.155 + 0.105 * (node_sizes[s] / size_max) for s in states}
     for state, is_positive in self_loops:
         x, y = pos[state]
         dx, dy = np.cos(angles[state]), np.sin(angles[state])
-        node_radius = (np.sqrt(node_size[state] / np.pi)) / max(points_per_data_unit, 1e-9)
-        loop_radius = 0.95 * node_radius
-        centre = (x + (node_radius + loop_radius * 0.9) * dx,
-                  y + (node_radius + loop_radius * 0.9) * dy)
+        loop_radius = 0.125
+        centre = (x + (node_radius_data[state] + loop_radius * 0.95) * dx,
+                  y + (node_radius_data[state] + loop_radius * 0.95) * dy)
         base_angle = np.degrees(np.arctan2(dy, dx))
         colour = PIYG_POSITIVE if is_positive else PIYG_NEGATIVE
         # drawn above the nodes: a loop tucked behind its own node reads as a
         # stray stub rather than a self-transition
         ax.add_patch(mpl.patches.Arc(
             centre, 2 * loop_radius, 2 * loop_radius,
-            theta1=base_angle + 130, theta2=base_angle + 20,
+            theta1=base_angle + 115, theta2=base_angle - 115,
             lw=2.0, color=colour, zorder=4,
         ))
-        head_angle = np.radians(base_angle + 130)
+        head_angle = np.radians(base_angle + 115)
         tip = (centre[0] + loop_radius * np.cos(head_angle),
                centre[1] + loop_radius * np.sin(head_angle))
         tangent = head_angle - np.pi / 2
         ax.annotate(
             "", xy=tip,
-            xytext=(tip[0] - 0.02 * np.cos(tangent), tip[1] - 0.02 * np.sin(tangent)),
-            arrowprops=dict(arrowstyle="-|>", mutation_scale=14, lw=2.0, color=colour),
+            xytext=(tip[0] - 0.022 * np.cos(tangent), tip[1] - 0.022 * np.sin(tangent)),
+            arrowprops=dict(arrowstyle="-|>", mutation_scale=13, lw=2.0, color=colour),
             zorder=4,
         )
 
@@ -424,7 +426,7 @@ def significant_transition_network(
     for state in states:
         x, y = pos[state]
         dx, dy = np.cos(angles[state]), np.sin(angles[state])
-        offset = 96 if state in looped else 36
+        offset = 104 if state in looped else 38
         ax.annotate(
             labels[state], (x, y), xytext=(offset * dx, offset * dy), textcoords="offset points",
             ha="center" if abs(dx) < 0.4 else ("left" if dx > 0 else "right"),
@@ -432,12 +434,14 @@ def significant_transition_network(
             fontsize=10, color=TEXT_PRIMARY,
         )
 
+    positive_label, negative_label = legend_labels or (
+        f"Positive correlation (p < {alpha:g}, uncorrected)",
+        f"Negative correlation (p < {alpha:g}, uncorrected)",
+    )
     ax.legend(
         handles=[
-            mpl.lines.Line2D([], [], color=PIYG_POSITIVE, lw=2.4,
-                             label=f"Positive correlation (p < {alpha:g}, uncorrected)"),
-            mpl.lines.Line2D([], [], color=PIYG_NEGATIVE, lw=2.4,
-                             label=f"Negative correlation (p < {alpha:g}, uncorrected)"),
+            mpl.lines.Line2D([], [], color=PIYG_POSITIVE, lw=2.4, label=positive_label),
+            mpl.lines.Line2D([], [], color=PIYG_NEGATIVE, lw=2.4, label=negative_label),
         ],
         loc="upper left", bbox_to_anchor=(-0.04, 1.04), frameon=False, fontsize=10,
     )
