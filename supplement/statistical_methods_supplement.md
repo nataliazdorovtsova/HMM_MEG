@@ -174,9 +174,14 @@ rather than load-bearing.
 measures, and the entropy result - is identical.
 
 Two things follow. First, the reported findings do not depend on this choice. Second, **the
-title claim is not rescued by a looser family**: entropy rate and cognitive ability is
+original title claim is not rescued by a looser family**: entropy rate and cognitive ability is
 p_adj = 0.061 even when entropy is corrected alone, so it does not reach significance under any
 family definition considered.
+
+**The paper has been retitled accordingly**, from *"The entropy of resting-state neural dynamics
+is a marker of general cognitive ability in childhood"* to *"Resting-state network occupancy and
+transition dynamics relate to cognitive ability in childhood"* - the findings that do survive.
+Entropy rate is reported in the Results as a null.
 
 On the question of whether the primary family is too strict for n = 46: it is the more
 conservative option, and with limited power that does cost real effects. The counterweight is
