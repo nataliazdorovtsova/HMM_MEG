@@ -2,7 +2,7 @@
 
     python -m analysis.make_paper_figures \
         --export-dir /path/to/HMM_MEG_exports \
-        --output-dir manuscript/figures
+        --output-dir figures
 
 Numbering follows the revised manuscript, in which the original Figure 6
 (switching rate and entropy against cognitive ability) is dropped because
@@ -347,7 +347,7 @@ def supplementary_all_states(merged, transitions, subject_level, output_dir: Pat
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export-dir", required=True)
-    parser.add_argument("--output-dir", default="manuscript/figures")
+    parser.add_argument("--output-dir", default="figures")
     args = parser.parse_args()
 
     export_dir = Path(args.export_dir)

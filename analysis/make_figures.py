@@ -42,6 +42,7 @@ from analysis.viz.figures import (
     transition_correlation_heatmap,
     transition_heatmap,
 )
+from analysis.viz.style import save_figure
 
 FS = 250  # matlab/preprocessing/HMM_FinishPreprocessing.m: options.downsample = 250
 
@@ -51,8 +52,10 @@ BEHAVIOURAL_COLUMNS = [
 ]
 
 # States whose own occupancy slope survives the final multiplicity correction
-# (see supplement section 7). States 1 and 3 are negative, 4 and 6 positive.
-HIGHLIGHT_STATES = [1, 3, 4, 6]
+# (see supplement section 7). State 1 is negative; states 4 and 6 are positive.
+# State 3 is deliberately excluded: its adjusted p of 0.052 does not survive, and
+# plotting it alongside the three that do would imply otherwise.
+HIGHLIGHT_STATES = [1, 4, 6]
 
 
 def _load(export_dir: Path):
@@ -70,8 +73,7 @@ def figure_correlations(subject_level, output_dir: Path) -> Path:
     fig, ax = plt.subplots(figsize=(8, 7))
     corr_heatmap(subject_level, columns=BEHAVIOURAL_COLUMNS, ax=ax)
     fig.tight_layout()
-    path = output_dir / "cognitive_behavioural_correlations.png"
-    fig.savefig(path, dpi=200)
+    path = save_figure(fig, output_dir / "cognitive_behavioural_correlations")[0]
     plt.close(fig)
     return path
 
@@ -86,24 +88,23 @@ def figure_state_distributions(merged, output_dir: Path) -> Path:
         merged, metric="interval_sec", ylabel="Mean interval (s)", log_scale=True, ax=axes[2],
     )
     fig.tight_layout()
-    path = output_dir / "state_metric_distributions.png"
-    fig.savefig(path, dpi=200)
+    path = save_figure(fig, output_dir / "state_metric_distributions")[0]
     plt.close(fig)
     return path
 
 
 def figure_cognition_scatters(merged, output_dir: Path) -> Path:
-    fig, axes = plt.subplots(2, 2, figsize=(11, 9))
-    for ax, state in zip(axes.ravel(), HIGHLIGHT_STATES):
+    fig, axes = plt.subplots(1, len(HIGHLIGHT_STATES), figsize=(15, 4.5))
+    for panel, (ax, state) in enumerate(zip(axes.ravel(), HIGHLIGHT_STATES)):
         cognition_scatter(
             merged[merged["state"] == state], x="WASI_T", y="FO",
             xlabel="WASI-II matrix reasoning T-score",
             ylabel=f"Fractional occupancy (state {state})",
             ax=ax,
         )
+        ax.set_title(f"{'ABCDEFG'[panel]}", loc="left")
     fig.tight_layout()
-    path = output_dir / "cognition_fo_scatters.png"
-    fig.savefig(path, dpi=200)
+    path = save_figure(fig, output_dir / "cognition_fo_scatters")[0]
     plt.close(fig)
     return path
 
@@ -116,8 +117,7 @@ def figure_transition_heatmap(transitions, output_dir: Path) -> Path:
     fig, ax = plt.subplots(figsize=(7.5, 6))
     transition_heatmap(mean_matrix.to_numpy(), ax=ax)
     fig.tight_layout()
-    path = output_dir / "transition_matrix_heatmap.png"
-    fig.savefig(path, dpi=200)
+    path = save_figure(fig, output_dir / "transition_matrix_heatmap")[0]
     plt.close(fig)
     return path
 
@@ -146,8 +146,7 @@ def figure_transition_cognition_heatmap(subject_level, transitions, output_dir: 
     fig, ax = plt.subplots(figsize=(7.6, 7.2))
     transition_correlation_heatmap(cellwise, ax=ax)
     fig.tight_layout()
-    path = output_dir / "transition_cognition_heatmap.png"
-    fig.savefig(path, dpi=200)
+    path = save_figure(fig, output_dir / "transition_cognition_heatmap")[0]
     plt.close(fig)
     return path
 
@@ -179,8 +178,7 @@ def figure_residual_qq(subject_level, merged, output_dir: Path) -> Path:
     residual_qq_plot(ent_raw.resid.values, title="Entropy rate (raw) residuals", ax=axes[1, 0])
     residual_qq_plot(ent_rank.resid.values, title="Entropy rate (rank-INT) residuals", ax=axes[1, 1])
     fig.tight_layout()
-    path = output_dir / "residual_qq_comparison.png"
-    fig.savefig(path, dpi=200)
+    path = save_figure(fig, output_dir / "residual_qq_comparison")[0]
     plt.close(fig)
     return path
 

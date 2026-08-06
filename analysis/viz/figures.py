@@ -135,7 +135,7 @@ def transition_heatmap(
     ax = ax or plt.gca()
 
     n_states = mean_transition_matrix.shape[0]
-    labels = state_labels or [f"State {i + 1}" for i in range(n_states)]
+    labels = state_labels or [str(i + 1) for i in range(n_states)]
 
     matrix = mean_transition_matrix.astype(float).copy()
     mask = np.eye(n_states, dtype=bool) if mask_diagonal else None
@@ -149,7 +149,7 @@ def transition_heatmap(
     )
     ax.set_xlabel("To state")
     ax.set_ylabel("From state")
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha="right")
+    ax.tick_params(rotation=0)
     return ax
 
 
