@@ -151,6 +151,43 @@ Subject-level effects:
 | Entropy rate ~ age | 0.1675 | 0.273 | No |
 | Entropy rate ~ age × cognition | 0.6995 | 0.770 | No |
 
+### 5.1 Sensitivity: how much does the correction family matter?
+
+The primary analysis corrects across **all 31 reported terms at once**. A reasonable
+alternative is to correct **within each metric** (7 tests each, entropy its own 3), on the
+grounds that each metric answers a distinct question. Both are reported here, because
+switching to the narrower family after seeing that it promotes two borderline states is the
+same move the original submission was criticised for - showing both makes the choice visible
+rather than load-bearing.
+
+| Metric | Family of 31 (primary) | Within-metric family |
+|---|---|---|
+| Occupancy | states 1, 4, 6 | states 1, **3**, 4, 6, **7** |
+| Transitions into state | states 3, 4, 6 | states 3, 4, 6 |
+| Interval | none | none |
+| Lifetime | none | none |
+| Entropy rate ~ cognition | not significant | not significant (p_adj = 0.061) |
+
+**The conclusions are unchanged except for occupancy states 3 and 7**, which sit at 0.052 and
+0.063 under the primary family and cross the threshold under the narrower one. Everything else
+- including which states are significant for transitions, the complete null for both duration
+measures, and the entropy result - is identical.
+
+Two things follow. First, the reported findings do not depend on this choice. Second, **the
+title claim is not rescued by a looser family**: entropy rate and cognitive ability is
+p_adj = 0.061 even when entropy is corrected alone, so it does not reach significance under any
+family definition considered.
+
+On the question of whether the primary family is too strict for n = 46: it is the more
+conservative option, and with limited power that does cost real effects. The counterweight is
+that effects which clear significance in small samples are systematically overestimated, so a
+liberal threshold is not the safer choice either. BH-FDR controls the expected proportion of
+false discoveries rather than requiring no false positive at all, which is substantially less
+punishing than family-wise methods would be here.
+
+Reproduce both with `python -m analysis.run_final_correction`, which prints the sensitivity
+comparison alongside the primary result.
+
 ### Reading the pattern
 
 Significant effects, with direction:

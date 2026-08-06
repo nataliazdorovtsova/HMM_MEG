@@ -183,3 +183,24 @@ def test_correct_pvalues_excludes_nan_terms_instead_of_poisoning_whole_result():
 def test_correct_pvalues_all_nan_raises():
     with pytest.raises(ValueError):
         correct_pvalues({"a": float("nan"), "b": float("nan")})
+
+
+def test_sensitivity_report_shows_both_correction_families():
+    # The per-metric family is deliberately reported alongside the primary
+    # one; if this ever silently drops to a single family, the paper would be
+    # claiming a robustness check it no longer performs.
+    from analysis.run_final_correction import sensitivity_report
+
+    results = {
+        "FO": {f"C(state)[{k}]:center(WASI_T)": p
+               for k, p in zip(range(1, 8), [0.004, 0.33, 0.017, 0.006, 0.16, 0.004, 0.012])},
+        "lifetime": {f"C(state)[{k}]:center(WASI_T)": 0.5 for k in range(1, 8)},
+        "entropy_rate": {"center(WASI_T)": 0.02, "center(age)": 0.17},
+    }
+    report = sensitivity_report(results)
+
+    assert "across all" in report and "within metric" in report
+    # a narrower family can only ever promote terms, never demote them
+    lines = {l.split()[0]: l for l in report.splitlines()[1:]}
+    assert "FO" in lines
+    assert "lifetime" in lines and lines["lifetime"].count("none") == 2

@@ -113,6 +113,31 @@ hr { border: none; border-top: 1px solid #ccc; margin: 10pt 0; }
 """
 
 
+MOBILE_CSS = """
+@page { size: A4 portrait; margin: 10mm 8mm; }
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+       font-size: 10.5pt; line-height: 1.5; color: #111; }
+h1 { font-size: 17pt; margin: 0 0 6pt 0; }
+h2 { font-size: 13pt; margin: 16pt 0 6pt 0; padding-top: 6pt;
+     border-top: 1.5px solid #444; page-break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 12pt 0 4pt 0; page-break-after: avoid; }
+p, li { margin: 5pt 0; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0 12pt 0;
+        table-layout: auto; font-size: 9pt; }
+th { background: #ececea; text-align: left; font-weight: 600;
+     border: 0.6px solid #999; padding: 3pt 4pt; }
+td { border: 0.6px solid #bbb; padding: 3pt 4pt; vertical-align: top;
+     word-wrap: break-word; overflow-wrap: break-word; }
+tr { page-break-inside: avoid; }
+code { background: #f2f2f0; padding: 0 2px; font-size: 9pt; }
+hr { border: none; border-top: 1px solid #ccc; margin: 10pt 0; }
+.figure { page-break-inside: avoid; margin: 0 0 14pt 0; text-align: center; }
+.figure img { max-width: 100%; max-height: 110mm; }
+.caption { font-size: 9pt; color: #444; margin-top: 4pt; text-align: left; }
+.figures-page { page-break-before: always; }
+"""
+
+
 def strip_emoji(text: str) -> str:
     for emoji, replacement in EMOJI_REPLACEMENTS.items():
         text = text.replace(emoji, replacement)
@@ -120,12 +145,28 @@ def strip_emoji(text: str) -> str:
     return re.sub(r"[\U0001F300-\U0001FAFF☀-➿️]", "", text)
 
 
-def _embed(path: Path) -> str:
-    """Inline an image as a data URI so the HTML is self-contained."""
-    return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
+def _embed(path: Path, max_width: int | None = None) -> str:
+    """Inline an image as a data URI so the HTML is self-contained.
+
+    `max_width` downsamples first, which is what keeps the mobile build small
+    enough to open comfortably on a phone - the full-resolution figures are
+    several hundred KB each and only matter in print.
+    """
+    data = path.read_bytes()
+    if max_width:
+        from io import BytesIO
+        from PIL import Image
+        img = Image.open(BytesIO(data))
+        if img.width > max_width:
+            img = img.resize((max_width, round(img.height * max_width / img.width)),
+                             Image.LANCZOS)
+        buf = BytesIO()
+        img.save(buf, format="PNG", optimize=True)
+        data = buf.getvalue()
+    return "data:image/png;base64," + base64.b64encode(data).decode()
 
 
-def build_html(tracker_md: str, figures_dir: Path) -> str:
+def build_html(tracker_md: str, figures_dir: Path, mobile: bool = False) -> str:
     body = markdown.markdown(strip_emoji(tracker_md), extensions=["tables", "sane_lists"])
 
     # Column widths are set per table by column count: the fixed 26/37/37
@@ -150,14 +191,14 @@ def build_html(tracker_md: str, figures_dir: Path) -> str:
         if not path.exists():
             continue
         figure_html.append(
-            f'<div class="figure"><img src="{_embed(path)}" />'
+            f'<div class="figure"><img src="{_embed(path, 1100 if mobile else None)}" />'
             f'<div class="caption"><b>{name}</b> &mdash; {FIGURE_CAPTIONS.get(name, "")}</div></div>'
         )
     figure_html.append("</div>")
 
     return (
         "<!doctype html><html><head><meta charset='utf-8'>"
-        f"<style>{CSS}</style></head><body>{body}{''.join(figure_html)}</body></html>"
+        f"<style>{MOBILE_CSS if mobile else CSS}</style></head><body>{body}{''.join(figure_html)}</body></html>"
     )
 
 
@@ -166,9 +207,11 @@ def main() -> None:
     parser.add_argument("--tracker", default="supplement/reviewer_response_tracker.md")
     parser.add_argument("--figures-dir", default="supplement/figures")
     parser.add_argument("--output", default="supplement/reviewer_response_tracker.pdf")
+    parser.add_argument("--mobile", action="store_true",
+                        help="Portrait A4, larger type, downsampled figures - for reading on a phone")
     args = parser.parse_args()
 
-    html = build_html(Path(args.tracker).read_text(), Path(args.figures_dir))
+    html = build_html(Path(args.tracker).read_text(), Path(args.figures_dir), mobile=args.mobile)
     output = Path(args.output).resolve()
 
     with tempfile.TemporaryDirectory() as tmpdir:
