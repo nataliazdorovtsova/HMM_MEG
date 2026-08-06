@@ -13,7 +13,8 @@ figures move up by one:
     Figure 2  preprocessing schematic        (not generated here)
     Figure 3  state maps, HCP Workbench      (not generated here)
     Figure 4  state intervals and lifetimes
-    Figure 5  Viterbi path and transition matrices (components, assembled by hand)
+    Figure 5  Viterbi path, transition matrices and transition digraph
+              (components 5A-5D, assembled by hand)
     Figure 6  fractional occupancy against cognitive ability, states 1, 4 and 6
     Figure 7  transitions into each state against cognitive ability
     Figure 8  transitions into states 3, 4 and 6 against cognitive ability
@@ -174,6 +175,94 @@ def figure4_intervals_lifetimes(merged, output_dir: Path):
     plt.close(fig)
 
 
+def _transition_digraph(mean_matrix, mean_occupancy, palette):
+    """Directed graph of the group mean transition matrix.
+
+    Purely descriptive, and deliberately so: every off-diagonal transition is
+    drawn, none is marked significant, and no arrow here corresponds to a test.
+    The confirmatory transition result is over transitions *into* each state
+    (the column sums), which Figures 7 and 8 report.
+
+    Self-transitions are excluded rather than drawn as self-loops. At 250 Hz
+    every state persists with probability ~0.91, so seven near-identical loops
+    would dominate the figure while carrying no information about which state
+    follows which; Figure 4 already reports state persistence as lifetimes.
+
+    Nodes sit on a fixed circle rather than a force-directed layout, so the
+    figure is reproducible and node position carries no meaning. Arrows are
+    drawn in data coordinates on an equal-aspect axis with fixed limits, so
+    later layout adjustments cannot detach them from their nodes.
+    """
+    from matplotlib.cm import ScalarMappable
+    from matplotlib.colors import Normalize
+    from matplotlib.patches import FancyArrowPatch
+
+    n = len(ALL_STATES)
+    angles = np.pi / 2 - 2 * np.pi * np.arange(n) / n
+    positions = np.column_stack([np.cos(angles), np.sin(angles)])
+
+    off_diagonal = ~np.eye(n, dtype=bool)
+    weights = mean_matrix[off_diagonal]
+    norm = Normalize(vmin=0.0, vmax=weights.max())
+    cmap = plt.get_cmap(SEQUENTIAL_CMAP)
+
+    # Radius in data units, from mean occupancy. The square root keeps state 1
+    # (mean FO ~0.015, an order of magnitude below the rest) visible while
+    # still ranking the nodes by how much time each state actually holds.
+    radii = 0.055 + 0.16 * np.sqrt(mean_occupancy / mean_occupancy.max())
+
+    fig, ax = plt.subplots(figsize=(7.5, 6.0))
+    ax.set_aspect("equal")
+    ax.set_xlim(-1.95, 1.95)
+    ax.set_ylim(-1.32, 1.32)
+    ax.axis("off")
+
+    # Weakest arrows first, so the strong transitions are never buried.
+    edges = sorted(
+        ((i, j) for i in range(n) for j in range(n) if i != j),
+        key=lambda ij: mean_matrix[ij],
+    )
+    for i, j in edges:
+        weight = mean_matrix[i, j]
+        # Shorten each arrow to the node boundaries so the head is visible
+        # against the circle rather than hidden underneath it.
+        delta = positions[j] - positions[i]
+        unit = delta / np.linalg.norm(delta)
+        start = positions[i] + unit * radii[i]
+        end = positions[j] - unit * (radii[j] + 0.02)
+        ax.add_patch(FancyArrowPatch(
+            start, end, arrowstyle="-|>", mutation_scale=11,
+            connectionstyle="arc3,rad=0.14",  # i->j and j->i curve opposite ways
+            linewidth=0.6 + 3.4 * norm(weight),
+            color=cmap(0.25 + 0.75 * norm(weight)),
+            alpha=0.45 + 0.55 * norm(weight), zorder=1,
+        ))
+
+    for index, state in enumerate(ALL_STATES):
+        ax.add_patch(plt.Circle(
+            positions[index], radii[index], facecolor=palette[index],
+            edgecolor=TEXT_PRIMARY, linewidth=0.8, zorder=2,
+        ))
+        # Push the label radially outwards, clear of the node and its arrows,
+        # then anchor it on the side facing away from the circle. Without the
+        # side-dependent anchoring, a centred label on a node at the 3 o'clock
+        # or 9 o'clock position runs straight back over its own node.
+        x, y = positions[index] * (1 + radii[index] + 0.10)
+        horizontal = np.cos(angles[index])
+        alignment = "center" if abs(horizontal) < 0.3 else ("left" if horizontal > 0 else "right")
+        ax.text(
+            x, y, f"{state}: {SHORT_LABELS[state]}",
+            ha=alignment, va="center", fontsize=10, fontweight="bold", zorder=3,
+        )
+
+    colourbar = fig.colorbar(
+        ScalarMappable(norm=norm, cmap=cmap), ax=ax, fraction=0.035, pad=0.02, shrink=0.82,
+    )
+    colourbar.set_label("Mean transition probability", fontsize=13, fontweight="bold")
+    colourbar.outline.set_visible(False)
+    return fig
+
+
 def figure5_components(merged, transitions, export_dir: Path, output_dir: Path):
     """Components of Figure 5, saved separately for manual assembly."""
     apply_style()
@@ -219,9 +308,16 @@ def figure5_components(merged, transitions, export_dir: Path, output_dir: Path):
     save_figure(fig, output_dir / "figure_5B_single_subject_matrices")
     plt.close(fig)
 
-    # 5C: group mean transition matrix, self-transitions masked
     mean_matrix = (transitions.groupby(["from_state", "to_state"])["probability"]
                    .mean().unstack().sort_index().sort_index(axis=1).to_numpy())
+
+    # 5C: directed graph of the same mean transition matrix
+    mean_occupancy = merged.groupby("state")["FO"].mean().reindex(ALL_STATES).to_numpy()
+    fig = _transition_digraph(mean_matrix, mean_occupancy, palette)
+    save_figure(fig, output_dir / "figure_5C_transition_digraph")
+    plt.close(fig)
+
+    # 5D: group mean transition matrix, self-transitions masked
     masked = np.ma.masked_array(mean_matrix, mask=np.eye(7, dtype=bool))
     fig, ax = plt.subplots(figsize=FIGURE_SIZES["single_column"])
     im = ax.imshow(masked, cmap=SEQUENTIAL_CMAP, vmin=0, vmax=masked.max())
@@ -241,7 +337,7 @@ def figure5_components(merged, transitions, export_dir: Path, output_dir: Path):
     cbar.set_label("Transition probability", fontsize=14, fontweight="bold")
     cbar.outline.set_visible(False)
     fig.tight_layout()
-    save_figure(fig, output_dir / "figure_5C_mean_transition_matrix")
+    save_figure(fig, output_dir / "figure_5D_mean_transition_matrix")
     plt.close(fig)
 
 
