@@ -17,7 +17,6 @@ import seaborn as sns
 
 from analysis.viz.style import (
     DIVERGING_CMAP,
-    DIVERGING_CMAP_PIYG,
     SEQUENTIAL_CMAP,
     STATE_PALETTE,
     TEXT_PRIMARY,
@@ -161,7 +160,7 @@ def transition_correlation_heatmap(
     ax=None,
 ):
     """Cell-wise correlations between each transition probability and cognitive
-    ability, on the diverging magenta-green scale.
+    ability, on the project diverging scale.
 
     **Descriptive only.** These 49 cells are not the confirmatory analysis:
     testing them individually is the multiplicity problem the reanalysis
@@ -177,7 +176,7 @@ def transition_correlation_heatmap(
     limit = vlim or float(np.abs(correlation_matrix).max())
 
     sns.heatmap(
-        correlation_matrix, ax=ax, cmap=DIVERGING_CMAP_PIYG,
+        correlation_matrix, ax=ax, cmap=DIVERGING_CMAP,
         vmin=-limit, vmax=limit, center=0, square=True,
         linewidths=0.5, linecolor="white",
         xticklabels=labels, yticklabels=labels,
