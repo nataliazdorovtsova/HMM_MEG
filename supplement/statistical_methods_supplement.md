@@ -188,6 +188,36 @@ punishing than family-wise methods would be here.
 Reproduce both with `python -m analysis.run_final_correction`, which prints the sensitivity
 comparison alongside the primary result.
 
+### 5.2 Behaviour (SDQ)
+
+The introduction promises behaviour as a research question, so it is tested and reported
+whatever the outcome. **SDQ total** is the behavioural measure: the five subscales are highly
+intercorrelated (max |r| = 0.85, mean 0.49), so testing all six separately would multiply tests
+without adding independent questions.
+
+The analysis mirrors the cognition analysis exactly - same four state metrics, same model, same
+10,000-permutation inference, same correction - with SDQ total in place of WASI.
+
+**Result: nothing.** Across 31 tests the smallest raw permutation p is 0.051, and nothing
+survives correction (smallest adjusted p = 0.406). With 31 tests one would expect roughly 1.6
+uncorrected hits below 0.05 by chance; one was observed. This is a clean null, and it now
+replaces the corresponding null carried over from the 2023 analysis, which had not been
+recomputed.
+
+**Correction family.** Cognition and behaviour are corrected as **separate families**, because
+they are separate research questions. This is consequential and so is stated explicitly:
+merging them into a single 62-test family removes all six cognition findings. Separate families
+per question is standard practice - a primary outcome is not normally corrected against an
+unrelated secondary family - and the reviewers' objection concerned narrowing *within* a single
+question and then narrowing again after seeing the result, which is a different matter. The
+merged figures are given here so the choice is visible rather than load-bearing.
+
+**On age-normed SDQ scores.** The scores analysed are raw, not age-normed; normed scores are
+not available for this cohort. Age is a covariate in every model, so age-related variance in
+SDQ is accounted for in the inference. Raw scores are reported in Table 1 and this is stated in
+Methods. Reproduce with
+`python -m analysis.run_permutations --predictor SDQ_total`.
+
 ### Reading the pattern
 
 Significant effects, with direction:

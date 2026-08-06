@@ -40,16 +40,18 @@ FS = 250  # matlab/preprocessing/HMM_FinishPreprocessing.m: options.downsample =
 
 # Each state's OWN cognition slope, not its difference from a reference
 # state - see analysis.models.fit_state_metric_model_simple_slopes.
-STATE_TERMS = state_slope_terms()
+def _state_terms(predictor: str):
+    return state_slope_terms(cognition_col=predictor)
 
 # Each term must be tested against a null built by permuting a variable that
 # term actually involves - otherwise its relationship with the outcome
 # survives every permutation and the p-value is meaningless. See
 # permutation_test_subject_scalar_model's docstring.
-ENTROPY_TERMS_BY_PERMUTED_COL = {
-    "WASI_T": ["center(WASI_T)", "center(WASI_T):center(age)"],
-    "age": ["center(age)"],
-}
+def _entropy_terms_by_permuted_col(predictor: str) -> dict[str, list[str]]:
+    return {
+        predictor: [f"center({predictor})", f"center({predictor}):center(age)"],
+        "age": ["center(age)"],
+    }
 
 
 def main() -> None:
@@ -58,6 +60,9 @@ def main() -> None:
     parser.add_argument("--output", default="supplement/permutation_pvalues_10000.json")
     parser.add_argument("--n-permutations", type=int, default=10_000)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--predictor", default="WASI_T",
+                        help="Subject-level predictor to test (default: WASI_T). "
+                             "Use SDQ_total for the behavioural analysis.")
     args = parser.parse_args()
 
     export_dir = Path(args.export_dir)
@@ -83,7 +88,8 @@ def main() -> None:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             res = permutation_test_state_metric_model(
-                df, metric=metric, terms=STATE_TERMS,
+                df, metric=metric, terms=_state_terms(args.predictor),
+                cognition_col=args.predictor,
                 n_permutations=args.n_permutations, seed=args.seed, simple_slopes=True,
             )
         print(f"=== {label} ({args.n_permutations} permutations, {time.time() - t0:.0f}s) ===", flush=True)
@@ -91,12 +97,13 @@ def main() -> None:
         results[label] = dict(zip(res["term"], res["perm_p"]))
 
     entropy_results: dict[str, float] = {}
-    for permute_col, terms in ENTROPY_TERMS_BY_PERMUTED_COL.items():
+    for permute_col, terms in _entropy_terms_by_permuted_col(args.predictor).items():
         t0 = time.time()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             ent = permutation_test_subject_scalar_model(
                 subject_level, outcome="entropy_rate", terms=terms,
+                cognition_col=args.predictor,
                 n_permutations=args.n_permutations, seed=args.seed,
                 permute_col=permute_col,
             )

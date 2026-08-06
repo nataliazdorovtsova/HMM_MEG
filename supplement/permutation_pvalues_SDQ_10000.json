@@ -1,0 +1,43 @@
+{
+  "FO": {
+    "C(state)[1]:center(SDQ_total)": 0.10318968103189681,
+    "C(state)[2]:center(SDQ_total)": 0.17368263173682633,
+    "C(state)[3]:center(SDQ_total)": 0.18808119188081193,
+    "C(state)[4]:center(SDQ_total)": 0.23577642235776422,
+    "C(state)[5]:center(SDQ_total)": 0.41505849415058493,
+    "C(state)[6]:center(SDQ_total)": 0.14978502149785022,
+    "C(state)[7]:center(SDQ_total)": 0.20907909209079092
+  },
+  "lifetime": {
+    "C(state)[1]:center(SDQ_total)": 0.17938206179382063,
+    "C(state)[2]:center(SDQ_total)": 0.716028397160284,
+    "C(state)[3]:center(SDQ_total)": 0.6553344665533447,
+    "C(state)[4]:center(SDQ_total)": 0.700929907009299,
+    "C(state)[5]:center(SDQ_total)": 0.78992100789921,
+    "C(state)[6]:center(SDQ_total)": 0.9654034596540346,
+    "C(state)[7]:center(SDQ_total)": 0.9381061893810619
+  },
+  "interval": {
+    "C(state)[1]:center(SDQ_total)": 0.051394860513948606,
+    "C(state)[2]:center(SDQ_total)": 0.10898910108989102,
+    "C(state)[3]:center(SDQ_total)": 0.8109189081091891,
+    "C(state)[4]:center(SDQ_total)": 0.2253774622537746,
+    "C(state)[5]:center(SDQ_total)": 0.36166383361663834,
+    "C(state)[6]:center(SDQ_total)": 0.12588741125887412,
+    "C(state)[7]:center(SDQ_total)": 0.22827717228277172
+  },
+  "transition_into": {
+    "C(state)[1]:center(SDQ_total)": 0.1620837916208379,
+    "C(state)[2]:center(SDQ_total)": 0.15708429157084292,
+    "C(state)[3]:center(SDQ_total)": 0.0893910608939106,
+    "C(state)[4]:center(SDQ_total)": 0.21907809219078092,
+    "C(state)[5]:center(SDQ_total)": 0.40945905409459055,
+    "C(state)[6]:center(SDQ_total)": 0.1332866713328667,
+    "C(state)[7]:center(SDQ_total)": 0.1302869713028697
+  },
+  "entropy_rate": {
+    "center(SDQ_total)": 0.4664533546645335,
+    "center(SDQ_total):center(age)": 0.72002799720028,
+    "center(age)": 0.41805819418058193
+  }
+}
