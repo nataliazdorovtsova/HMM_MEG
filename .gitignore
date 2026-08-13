@@ -25,3 +25,6 @@ HMM_MEG.code-workspace
 # Unpublished manuscript - kept local, never pushed
 manuscript/
 supplement/reviewer_tracker_mobile.pdf
+
+# Submission artefact, regenerate with analysis/make_supplement_docx.py
+supplement/supplementary_materials.docx

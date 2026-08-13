@@ -205,7 +205,7 @@ The analysis mirrors the cognition analysis exactly - same four state metrics, s
 
 **Result: nothing.** Across 31 tests the smallest raw permutation p is 0.051, and nothing
 survives correction (smallest adjusted p = 0.406). With 31 tests one would expect roughly 1.6
-uncorrected hits below 0.05 by chance; one was observed. This is a clean null, and it now
+uncorrected hits below 0.05 by chance; **zero** were observed. This is a clean null, and it now
 replaces the corresponding null carried over from the 2023 analysis, which had not been
 recomputed.
 
