@@ -18,6 +18,7 @@ __pycache__/
 # Private working document - shared directly, not via the public repo
 supplement/reviewer_response_tracker.md
 supplement/reviewer_response_tracker.pdf
+supplement/reviewer_response_tracker.docx
 
 # Local editor config
 HMM_MEG.code-workspace
